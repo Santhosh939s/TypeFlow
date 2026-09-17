@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { TestSettings, TestResult, TimelineSample, TestMetrics } from '../types';
 import { generateTestText } from '../utils/textGenerator';
 import { calculateMetrics } from '../utils/metrics';
@@ -10,7 +10,7 @@ export function useTypingEngine(
   playErrorSound: () => void
 ) {
   const [text, setText] = useState<string>(() => generateTestText(settings));
-  const words = useRef<string[]>(text.split(' '));
+  const words = useRef<string[]>(text.split(/\s+/).filter(w => w.length > 0));
 
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [currentInput, setCurrentInput] = useState('');
@@ -33,7 +33,7 @@ export function useTypingEngine(
 
   // Sync wordsRef when text changes
   useEffect(() => {
-    wordsRef.current = text.split(' ');
+    wordsRef.current = text.split(/\s+/).filter(w => w.length > 0);
   }, [text]);
 
   // Generate new test
@@ -42,7 +42,7 @@ export function useTypingEngine(
     
     const newText = customText ?? generateTestText(settings);
     setText(newText);
-    wordsRef.current = newText.split(' ');
+    wordsRef.current = newText.split(/\s+/).filter(w => w.length > 0);
 
     setCurrentWordIndex(0);
     setCurrentInput('');
@@ -269,7 +269,7 @@ export function useTypingEngine(
     }
 
     // Handle Space
-    if (e.key === ' ') {
+    if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       processSpace();
       return;
@@ -328,3 +328,5 @@ export function useTypingEngine(
     repeatCurrentTest,
   };
 }
+
+
