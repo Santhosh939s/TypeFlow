@@ -78,6 +78,7 @@ export function App() {
     typedWords,
     status,
     timeLeft,
+    elapsedTime,
     liveMetrics,
     handleKeyDown,
     handleMobileInput,
@@ -226,6 +227,7 @@ export function App() {
               currentWordIndex={currentWordIndex}
               totalWords={words.length}
               status={status}
+              elapsedTime={elapsedTime}
             />
 
             {/* Interactive Concept Card (Learn Mode) */}

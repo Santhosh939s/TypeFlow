@@ -21,7 +21,7 @@ export const InteractiveDsaCard: React.FC<InteractiveDsaCardProps> = ({
       : 'bg-rose-500/10 text-rose-400 border-rose-500/30';
 
   return (
-    <div className="w-full max-w-4xl mx-auto mb-4 p-4 sm:p-5 rounded-2xl bg-[#131824]/90 border border-theme-main/30 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
+    <div className="w-full max-w-5xl mx-auto mb-4 p-4 sm:p-5 rounded-2xl bg-[#131824]/90 border border-theme-main/30 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
         {/* Title & Metadata */}
         <div className="flex items-center gap-2.5">

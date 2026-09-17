@@ -1,4 +1,4 @@
-﻿import React, { useRef, useEffect, useState, useLayoutEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useLayoutEffect, useMemo } from 'react';
 import { MousePointerClick, Smartphone } from 'lucide-react';
 import { TestMode } from '../types';
 import { parseTextStructure } from '../utils/codeParser';
@@ -130,9 +130,9 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
       const wordTop = wordEl.offsetTop;
       const containerHeight = scrollContainer.clientHeight;
 
-      if (wordTop > containerHeight * 0.45) {
+      if (wordTop > containerHeight * 0.5) {
         scrollContainer.scrollTo({
-          top: wordTop - 40,
+          top: wordTop - 50,
           behavior: 'smooth',
         });
       } else if (wordTop === 0) {
@@ -145,7 +145,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     <div
       ref={containerRef}
       onClick={handleContainerClick}
-      className="relative w-full max-w-4xl mx-auto min-h-[190px] sm:min-h-[220px] p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-[#11141c]/80 border border-white/5 shadow-2xl backdrop-blur-md cursor-text select-none overflow-hidden transition-all duration-300 hover:border-white/10"
+      className="relative w-full max-w-5xl mx-auto min-h-[250px] sm:min-h-[290px] md:min-h-[310px] p-6 sm:p-10 md:p-12 rounded-2xl sm:rounded-3xl bg-[#11141c]/80 border border-white/5 shadow-2xl backdrop-blur-md cursor-text select-none overflow-hidden transition-all duration-300 hover:border-white/10"
     >
       {/* Invisible accessible input supporting physical & virtual touch keyboards */}
       <input
@@ -184,8 +184,10 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
       <div
         ref={wordsContainerRef}
         className={`relative ${
-          isCodeMode ? 'h-[160px] sm:h-[190px] text-lg sm:text-xl md:text-2xl' : 'h-[130px] sm:h-[160px] text-xl sm:text-2xl md:text-3xl'
-        } overflow-y-hidden overflow-x-hidden font-mono leading-relaxed tracking-wide transition-all`}
+          isCodeMode
+            ? 'h-[220px] sm:h-[260px] md:h-[280px] text-lg sm:text-xl md:text-2xl'
+            : 'h-[180px] sm:h-[220px] md:h-[240px] text-xl sm:text-2xl md:text-3xl'
+        } overflow-y-hidden overflow-x-hidden font-mono leading-[1.8] sm:leading-[1.85] tracking-wide transition-all`}
       >
         {/* Animated Smooth Caret */}
         {isFocused && status !== 'completed' && (
