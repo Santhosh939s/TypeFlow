@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { TestResult, TestSettings } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { dbService } from '../services/dbService';
 
 const DEFAULT_SETTINGS: TestSettings = {
   mode: 'time',
@@ -17,6 +19,9 @@ const DEFAULT_SETTINGS: TestSettings = {
 };
 
 export function useLocalStorage() {
+  const { user, isConfigured } = useAuth();
+  const initialFetchDone = useRef<string | null>(null);
+
   const [settings, setSettings] = useState<TestSettings>(() => {
     try {
       const saved = localStorage.getItem('typeflow_settings');
@@ -26,24 +31,11 @@ export function useLocalStorage() {
     }
   });
 
-  const [history, setHistory] = useState<TestResult[]>(() => {
-    try {
-      const saved = localStorage.getItem('typeflow_history');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [history, setHistory] = useState<TestResult[]>([]);
+  const [personalBests, setPersonalBests] = useState<Record<string, number>>({});
+  const [isLoadingCloud, setIsLoadingCloud] = useState<boolean>(false);
 
-  const [personalBests, setPersonalBests] = useState<Record<string, number>>(() => {
-    try {
-      const saved = localStorage.getItem('typeflow_pbs');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
-
+  // Settings persistence
   useEffect(() => {
     try {
       localStorage.setItem('typeflow_settings', JSON.stringify(settings));
@@ -52,47 +44,86 @@ export function useLocalStorage() {
     }
   }, [settings]);
 
-  const saveTestResult = (result: TestResult): { isPB: boolean; previousPB: number } => {
-    const key = `${result.mode}-${result.modeConfig}`;
-    const prevPB = personalBests[key] || 0;
-    const isPB = result.wpm > prevPB;
+  // Load cloud history & personal bests directly from Supabase when user signs in
+  useEffect(() => {
+    if (!user || !isConfigured) {
+      initialFetchDone.current = null;
+      setHistory([]);
+      setPersonalBests({});
+      return;
+    }
 
-    const newResult = {
-      ...result,
-      isPersonalBest: isPB,
+    if (initialFetchDone.current === user.id) return;
+    initialFetchDone.current = user.id;
+
+    const loadCloudData = async () => {
+      setIsLoadingCloud(true);
+      try {
+        const cloudHistory = await dbService.fetchUserHistory(user.id, 100);
+        const cloudPBs = await dbService.fetchPersonalBests(user.id);
+        setHistory(cloudHistory);
+        setPersonalBests(cloudPBs);
+      } catch (err) {
+        console.warn('[useLocalStorage] Cloud fetch error:', err);
+      } finally {
+        setIsLoadingCloud(false);
+      }
     };
 
-    const newHistory = [newResult, ...history].slice(0, 50); // keep last 50
-    setHistory(newHistory);
-    try {
-      localStorage.setItem('typeflow_history', JSON.stringify(newHistory));
-    } catch (e) {
-      console.error('Failed to save history:', e);
-    }
+    loadCloudData();
+  }, [user, isConfigured]);
 
-    if (isPB) {
-      const newPBs = { ...personalBests, [key]: result.wpm };
-      setPersonalBests(newPBs);
-      try {
-        localStorage.setItem('typeflow_pbs', JSON.stringify(newPBs));
-      } catch (e) {
-        console.error('Failed to save PB:', e);
+  const saveTestResult = useCallback(
+    (result: TestResult): { isPB: boolean; previousPB: number } => {
+      const key = `${result.mode}-${result.modeConfig}`;
+      const prevPB = personalBests[key] || 0;
+      const isPB = result.wpm > prevPB;
+
+      const newResult: TestResult = {
+        ...result,
+        isPersonalBest: isPB,
+      };
+
+      // Optimistically update live session state
+      setHistory((prev) => [newResult, ...prev].slice(0, 100));
+
+      if (isPB) {
+        setPersonalBests((prev) => ({ ...prev, [key]: result.wpm }));
       }
-    }
 
-    return { isPB, previousPB: prevPB };
-  };
+      // Save directly to Supabase cloud database
+      if (user && isConfigured) {
+        dbService
+          .saveTestResult(user.id, newResult)
+          .then((cloudId) => {
+            if (cloudId) {
+              setHistory((current) =>
+                current.map((item) => (item.id === newResult.id ? { ...item, id: cloudId } : item))
+              );
+            }
+          })
+          .catch((err) => {
+            console.error('[useLocalStorage] Failed to save test to Supabase:', err);
+          });
+      }
 
-  const clearHistory = () => {
+      return { isPB, previousPB: prevPB };
+    },
+    [personalBests, user, isConfigured]
+  );
+
+  const clearHistory = useCallback(async () => {
     setHistory([]);
     setPersonalBests({});
-    try {
-      localStorage.removeItem('typeflow_history');
-      localStorage.removeItem('typeflow_pbs');
-    } catch (e) {
-      console.error('Failed to clear history:', e);
+
+    if (user && isConfigured) {
+      try {
+        await dbService.clearUserHistory(user.id);
+      } catch (e) {
+        console.warn('Failed to clear cloud history:', e);
+      }
     }
-  };
+  }, [user, isConfigured]);
 
   return {
     settings,
@@ -101,5 +132,6 @@ export function useLocalStorage() {
     personalBests,
     saveTestResult,
     clearHistory,
+    isLoadingCloud,
   };
 }

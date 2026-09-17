@@ -13,6 +13,7 @@ interface TypingAreaProps {
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onMobileInput: (value: string) => void;
   status: 'idle' | 'running' | 'completed';
+  disabled?: boolean;
 }
 
 export const TypingArea: React.FC<TypingAreaProps> = ({
@@ -25,6 +26,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
   onKeyDown,
   onMobileInput,
   status,
+  disabled = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -50,27 +52,54 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
   }, []);
 
-  // Always keep focus on input unless user intentionally focuses elsewhere
+  // Always keep focus on input unless disabled or intentionally focused elsewhere
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    if (!disabled) {
+      inputRef.current?.focus();
+    }
+  }, [disabled]);
 
   const handleContainerClick = () => {
-    inputRef.current?.focus();
-    setIsFocused(true);
+    if (!disabled) {
+      inputRef.current?.focus();
+      setIsFocused(true);
+    }
   };
 
-  // Re-focus on any keypress if window receives input
+  // Re-focus on keypress ONLY if not disabled and not typing into another input/modal
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (document.activeElement !== inputRef.current && !['Tab', 'F5', 'F12'].includes(e.key)) {
+      if (disabled) return;
+
+      const target = e.target as HTMLElement | null;
+
+      // Never steal focus if target is another input, textarea, or contentEditable
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        if (target !== inputRef.current) return;
+      }
+
+      // Never steal focus if an overlay or modal is active
+      if (target?.closest('.fixed, [role="dialog"], [aria-modal="true"]')) {
+        return;
+      }
+
+      if (
+        document.activeElement !== inputRef.current &&
+        !['Tab', 'F5', 'F12', 'Escape', 'Alt', 'Control', 'Meta'].includes(e.key)
+      ) {
         inputRef.current?.focus();
         setIsFocused(true);
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, []);
+  }, [disabled]);
 
   // Calculate smooth floating caret position
   useLayoutEffect(() => {
@@ -122,12 +151,13 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
       <input
         ref={inputRef}
         type="text"
+        disabled={disabled}
         value={currentInput}
-        onChange={(e) => onMobileInput(e.target.value)}
-        onKeyDown={onKeyDown}
-        onFocus={() => setIsFocused(true)}
+        onChange={(e) => !disabled && onMobileInput(e.target.value)}
+        onKeyDown={(e) => !disabled && onKeyDown(e)}
+        onFocus={() => !disabled && setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className="absolute inset-0 opacity-0 cursor-default z-10 w-full h-full"
+        className="absolute inset-0 opacity-0 cursor-default z-10 w-full h-full disabled:pointer-events-none"
         autoComplete="off"
         autoCapitalize="off"
         autoCorrect="off"
