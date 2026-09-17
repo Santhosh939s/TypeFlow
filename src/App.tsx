@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { ModeSelector } from './components/ModeSelector';
 import { LiveStatsBar } from './components/LiveStatsBar';
@@ -62,6 +62,7 @@ export function App() {
 
   // Core typing engine
   const {
+    text,
     words,
     currentWordIndex,
     currentInput,
@@ -91,7 +92,7 @@ export function App() {
     const newSettings = { ...settings, ...updates };
     setSettings(newSettings);
     setCompletedResult(null);
-    initializeNewTest();
+    initializeNewTest(undefined, newSettings);
   };
 
   // Start a fresh test
@@ -209,6 +210,8 @@ export function App() {
 
             {/* Main Interactive Typing Area */}
             <TypingArea
+              text={text}
+              mode={settings.mode}
               words={words}
               currentWordIndex={currentWordIndex}
               currentInput={currentInput}
@@ -248,3 +251,8 @@ export function App() {
 }
 
 export default App;
+
+
+
+
+

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Zap, Target, Gauge, Timer } from 'lucide-react';
 import { TestMetrics, TestMode } from '../types';
 
@@ -28,8 +28,10 @@ export const LiveStatsBar: React.FC<LiveStatsBarProps> = ({
   if (mode === 'time') {
     progress = Math.min(100, Math.max(0, ((totalDuration - timeLeft) / totalDuration) * 100));
   } else {
-    progress = Math.min(100, Math.max(0, (currentWordIndex / totalWords) * 100));
+    progress = Math.min(100, Math.max(0, (currentWordIndex / Math.max(1, totalWords)) * 100));
   }
+
+  const unitLabel = mode === 'code' ? 'tokens' : 'words';
 
   return (
     <div className="w-full max-w-4xl mx-auto mb-6">
@@ -51,7 +53,7 @@ export const LiveStatsBar: React.FC<LiveStatsBarProps> = ({
               <span>{Math.min(currentWordIndex, totalWords)}</span>
               <span className="text-sm font-sans text-theme-sub">/ {totalWords}</span>
               <span className="text-xs font-sans text-theme-sub uppercase tracking-wider font-semibold">
-                words
+                {unitLabel}
               </span>
             </div>
           )}

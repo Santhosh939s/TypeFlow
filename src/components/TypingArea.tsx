@@ -1,7 +1,11 @@
-import React, { useRef, useEffect, useState, useLayoutEffect } from 'react';
+﻿import React, { useRef, useEffect, useState, useLayoutEffect, useMemo } from 'react';
 import { MousePointerClick, Smartphone } from 'lucide-react';
+import { TestMode } from '../types';
+import { parseTextStructure } from '../utils/codeParser';
 
 interface TypingAreaProps {
+  text: string;
+  mode: TestMode;
   words: string[];
   currentWordIndex: number;
   currentInput: string;
@@ -12,6 +16,8 @@ interface TypingAreaProps {
 }
 
 export const TypingArea: React.FC<TypingAreaProps> = ({
+  text,
+  mode,
   words,
   currentWordIndex,
   currentInput,
@@ -33,6 +39,11 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     top: 0,
     height: 28,
   });
+
+  // Parse text into formatted lines and indentation
+  const { lines, isCodeMode } = useMemo(() => {
+    return parseTextStructure(text, mode === 'code' || mode === 'dsa');
+  }, [text, mode]);
 
   // Detect touch device
   useEffect(() => {
@@ -99,7 +110,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
         scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
-  }, [currentWordIndex, currentInput, words]);
+  }, [currentWordIndex, currentInput, words, lines]);
 
   return (
     <div
@@ -107,7 +118,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
       onClick={handleContainerClick}
       className="relative w-full max-w-4xl mx-auto min-h-[190px] sm:min-h-[220px] p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-[#11141c]/80 border border-white/5 shadow-2xl backdrop-blur-md cursor-text select-none overflow-hidden transition-all duration-300 hover:border-white/10"
     >
-      {/* Invisible accessible input supporting both physical & virtual touch keyboards */}
+      {/* Invisible accessible input supporting physical & virtual touch keyboards */}
       <input
         ref={inputRef}
         type="text"
@@ -132,17 +143,19 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
           ) : (
             <MousePointerClick size={28} className="text-theme-main animate-bounce mb-2" />
           )}
-          <p className="text-sm sm:text-base font-medium text-white">
+          <p className="text-sm sm:text-base font-medium text-white font-sans">
             {isTouchDevice ? 'Tap anywhere to open keyboard' : 'Click or press any key to focus'}
           </p>
-          <p className="text-xs text-theme-sub mt-1">Keep typing to continue</p>
+          <p className="text-xs text-theme-sub mt-1 font-sans">Keep typing to continue</p>
         </div>
       )}
 
       {/* Words Stream Container */}
       <div
         ref={wordsContainerRef}
-        className="relative h-[130px] sm:h-[160px] overflow-y-hidden overflow-x-hidden font-mono text-xl sm:text-2xl md:text-3xl leading-relaxed tracking-wide transition-all"
+        className={`relative ${
+          isCodeMode ? 'h-[160px] sm:h-[190px] text-lg sm:text-xl md:text-2xl' : 'h-[130px] sm:h-[160px] text-xl sm:text-2xl md:text-3xl'
+        } overflow-y-hidden overflow-x-hidden font-mono leading-relaxed tracking-wide transition-all`}
       >
         {/* Animated Smooth Caret */}
         {isFocused && status !== 'completed' && (
@@ -155,72 +168,112 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
           />
         )}
 
-        <div className="flex flex-wrap gap-x-2 sm:gap-x-3 gap-y-2 sm:gap-y-3 items-center">
-          {words.map((word, wordIdx) => {
-            const isCurrent = wordIdx === currentWordIndex;
-            const isPast = wordIdx < currentWordIndex;
-            const typedWord = isPast ? typedWords[wordIdx] || '' : isCurrent ? currentInput : '';
-            const hasError = isPast && typedWord !== word;
+        {/* Lines and Indented Blocks */}
+        <div className={isCodeMode ? 'space-y-1 sm:space-y-1.5' : 'flex flex-wrap gap-x-2 sm:gap-x-3 gap-y-2 sm:gap-y-3 items-center'}>
+          {lines.map((line, lineIdx) => {
+            const isLastLine = lineIdx === lines.length - 1;
 
             return (
-              <span
-                key={`word-${wordIdx}`}
-                ref={isCurrent ? activeWordRef : null}
-                className={`relative inline-flex items-center transition-opacity duration-150 ${
-                  isPast && !hasError ? 'opacity-75' : ''
-                }`}
+              <div
+                key={`line-${lineIdx}`}
+                className={isCodeMode ? 'flex flex-wrap gap-x-2 sm:gap-x-2.5 items-center w-full' : 'contents'}
+                style={isCodeMode && line.indent > 0 ? { paddingLeft: `${line.indent * 1.5}rem` } : undefined}
               >
-                {/* Render expected characters */}
-                {word.split('').map((char, charIdx) => {
-                  let charClass = 'text-theme-sub/40';
+                {/* Visual Indentation Guide (Code Mode) */}
+                {isCodeMode && line.indent > 0 && (
+                  <span
+                    className="inline-flex items-center text-theme-sub/20 select-none font-mono text-xs mr-1 tracking-widest"
+                    aria-hidden="true"
+                  >
+                    {'··'.repeat(line.indent)}
+                  </span>
+                )}
 
-                  if (isPast) {
-                    if (charIdx < typedWord.length) {
-                      charClass = typedWord[charIdx] === char
-                        ? 'text-theme-main'
-                        : 'text-theme-error underline decoration-2 decoration-theme-error';
-                    } else {
-                      charClass = 'text-theme-error/70 underline';
-                    }
-                  } else if (isCurrent) {
-                    if (charIdx < currentInput.length) {
-                      charClass = currentInput[charIdx] === char
-                        ? 'text-theme-main font-semibold drop-shadow-[0_0_8px_rgba(16,185,129,0.35)]'
-                        : 'text-theme-error underline decoration-2 decoration-theme-error';
-                    }
-                  }
+                {/* Render words within this line */}
+                {line.wordIndices.map((wordIdx) => {
+                  const word = words[wordIdx];
+                  if (!word) return null;
 
-                  const isCaretTarget = isCurrent && charIdx === currentInput.length - 1;
+                  const isCurrent = wordIdx === currentWordIndex;
+                  const isPast = wordIdx < currentWordIndex;
+                  const typedWord = isPast ? typedWords[wordIdx] || '' : isCurrent ? currentInput : '';
+                  const hasError = isPast && typedWord !== word;
+                  const isLastWordInLine = wordIdx === line.wordIndices[line.wordIndices.length - 1];
 
                   return (
                     <span
-                      key={`c-${charIdx}`}
-                      ref={isCaretTarget ? activeCharRef : null}
-                      className={`${charClass} transition-colors duration-75`}
+                      key={`word-${wordIdx}`}
+                      ref={isCurrent ? activeWordRef : null}
+                      className={`relative inline-flex items-center transition-opacity duration-150 ${
+                        isPast && !hasError ? 'opacity-75' : ''
+                      }`}
                     >
-                      {char}
+                      {/* Render expected characters */}
+                      {word.split('').map((char, charIdx) => {
+                        let charClass = 'text-theme-sub/40';
+
+                        if (isPast) {
+                          if (charIdx < typedWord.length) {
+                            charClass = typedWord[charIdx] === char
+                              ? 'text-theme-main'
+                              : 'text-theme-error underline decoration-2 decoration-theme-error';
+                          } else {
+                            charClass = 'text-theme-error/70 underline';
+                          }
+                        } else if (isCurrent) {
+                          if (charIdx < currentInput.length) {
+                            charClass = currentInput[charIdx] === char
+                              ? 'text-theme-main font-semibold drop-shadow-[0_0_8px_rgba(16,185,129,0.35)]'
+                              : 'text-theme-error underline decoration-2 decoration-theme-error';
+                          }
+                        }
+
+                        const isCaretTarget = isCurrent && charIdx === currentInput.length - 1;
+
+                        return (
+                          <span
+                            key={`c-${charIdx}`}
+                            ref={isCaretTarget ? activeCharRef : null}
+                            className={`${charClass} transition-colors duration-75`}
+                          >
+                            {char}
+                          </span>
+                        );
+                      })}
+
+                      {/* Extra characters */}
+                      {typedWord.length > word.length && (
+                        <span className="inline-flex">
+                          {typedWord.slice(word.length).split('').map((extraChar, extraIdx) => {
+                            const isLastExtra = isCurrent && extraIdx === (typedWord.length - word.length - 1);
+                            return (
+                              <span
+                                key={`extra-${extraIdx}`}
+                                ref={isLastExtra ? activeCharRef : null}
+                                className="text-theme-error bg-theme-error/20 rounded px-[1px] font-bold"
+                              >
+                                {extraChar}
+                              </span>
+                            );
+                          })}
+                        </span>
+                      )}
+
+                      {/* Newline enter symbol at end of code lines */}
+                      {isCodeMode && isLastWordInLine && !isLastLine && (
+                        <span
+                          className={`text-xs ml-1 font-mono transition-opacity select-none ${
+                            isCurrent ? 'text-theme-main/70 font-bold animate-pulse' : 'text-theme-sub/20'
+                          }`}
+                          title="Press Enter or Space for newline"
+                        >
+                          ↵
+                        </span>
+                      )}
                     </span>
                   );
                 })}
-
-                {/* Extra characters */}
-                {typedWord.length > word.length && (
-                  <span className="inline-flex">
-                    {typedWord.slice(word.length).split('').map((extraChar, extraIdx) => {
-                      const isLastExtra = isCurrent && extraIdx === (typedWord.length - word.length - 1);
-                      return (
-                        <span
-                          key={`extra-${extraIdx}`}
-                          ref={isLastExtra ? activeCharRef : null}
-                          className="text-theme-error bg-theme-error/20 rounded px-[1px] font-bold"
-                        >
-                          {extraChar}
-                        </span>
-                      );
-                    })}
-                  </span>
-                )}
-              </span>
+              </div>
             );
           })}
         </div>
@@ -228,3 +281,4 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     </div>
   );
 };
+
