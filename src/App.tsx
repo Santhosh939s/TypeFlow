@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { ModeSelector } from './components/ModeSelector';
 import { LiveStatsBar } from './components/LiveStatsBar';
@@ -69,6 +69,7 @@ export function App() {
     typedWords,
     status,
     timeLeft,
+    elapsedTime,
     liveMetrics,
     handleKeyDown,
     handleMobileInput,
@@ -189,6 +190,7 @@ export function App() {
               currentWordIndex={currentWordIndex}
               totalWords={words.length}
               status={status}
+              elapsedTime={elapsedTime}
             />
 
             {/* Interactive Concept Card (Learn Mode) */}

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Zap, Target, Gauge, Timer } from 'lucide-react';
 import { TestMetrics, TestMode } from '../types';
 
@@ -10,6 +10,7 @@ interface LiveStatsBarProps {
   currentWordIndex: number;
   totalWords: number;
   status: 'idle' | 'running' | 'completed';
+  elapsedTime?: number;
 }
 
 export const LiveStatsBar: React.FC<LiveStatsBarProps> = ({
@@ -20,21 +21,63 @@ export const LiveStatsBar: React.FC<LiveStatsBarProps> = ({
   currentWordIndex,
   totalWords,
   status,
+  elapsedTime = 0,
 }) => {
   const isRunning = status === 'running';
+  const barRef = React.useRef<HTMLDivElement>(null);
 
-  // Calculate progress %
-  let progress = 0;
-  if (mode === 'time') {
-    progress = Math.min(100, Math.max(0, ((totalDuration - timeLeft) / totalDuration) * 100));
-  } else {
-    progress = Math.min(100, Math.max(0, (currentWordIndex / Math.max(1, totalWords)) * 100));
-  }
+  // Smooth continuous progress bar animation
+  React.useEffect(() => {
+    if (!barRef.current) return;
+
+    if (mode !== 'time') {
+      const wordProgress = Math.min(100, Math.max(0, (currentWordIndex / Math.max(1, totalWords)) * 100));
+      barRef.current.style.transition = 'width 200ms ease-out';
+      barRef.current.style.width = `${wordProgress}%`;
+      return;
+    }
+
+    if (status === 'idle') {
+      barRef.current.style.transition = 'none';
+      barRef.current.style.width = '0%';
+      return;
+    }
+
+    if (status === 'completed') {
+      barRef.current.style.transition = 'width 150ms ease-out';
+      barRef.current.style.width = '100%';
+      return;
+    }
+
+    if (status === 'running') {
+      barRef.current.style.transition = 'none';
+
+      let animId: number;
+      const startTimestamp = performance.now() - (elapsedTime * 1000);
+
+      const frame = () => {
+        const now = performance.now();
+        const currentElapsed = (now - startTimestamp) / 1000;
+        const pct = Math.min(100, Math.max(0, (currentElapsed / Math.max(1, totalDuration)) * 100));
+
+        if (barRef.current) {
+          barRef.current.style.width = `${pct}%`;
+        }
+
+        if (pct < 100) {
+          animId = requestAnimationFrame(frame);
+        }
+      };
+
+      animId = requestAnimationFrame(frame);
+      return () => cancelAnimationFrame(animId);
+    }
+  }, [mode, status, totalDuration, currentWordIndex, totalWords]);
 
   const unitLabel = mode === 'code' ? 'tokens' : 'words';
 
   return (
-    <div className="w-full max-w-4xl mx-auto mb-6">
+    <div className="w-full max-w-5xl mx-auto mb-6">
       {/* Top metrics badges */}
       <div className="flex items-center justify-between px-2 mb-2">
         {/* Left: Primary Live Metric (Time or Word Progress) */}
@@ -93,11 +136,12 @@ export const LiveStatsBar: React.FC<LiveStatsBarProps> = ({
         </div>
       </div>
 
-      {/* Sleek Progress Bar */}
-      <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+      {/* Sleek Continuously Increasing Progress Bar */}
+      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
         <div
-          className="h-full bg-theme-main transition-all duration-300 shadow-[0_0_12px_var(--color-main)]"
-          style={{ width: `${progress}%` }}
+          ref={barRef}
+          className="h-full bg-gradient-to-r from-theme-main/80 to-theme-main shadow-[0_0_12px_var(--color-main)] rounded-full"
+          style={{ width: '0%' }}
         />
       </div>
     </div>

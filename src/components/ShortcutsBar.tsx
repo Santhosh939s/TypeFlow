@@ -13,7 +13,7 @@ export const ShortcutsBar: React.FC<ShortcutsBarProps> = ({ onRestart }) => {
   }, []);
 
   return (
-    <div className="w-full max-w-4xl mx-auto mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-theme-sub px-1">
+    <div className="w-full max-w-5xl mx-auto mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-theme-sub px-1">
       {/* Quick restart icon button */}
       <button
         onClick={onRestart}
