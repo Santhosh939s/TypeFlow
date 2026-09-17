@@ -1,4 +1,4 @@
-export type TestMode = 'time' | 'words' | 'code' | 'quotes';
+﻿export type TestMode = 'time' | 'words' | 'code' | 'quotes';
 
 export type TimeDuration = 15 | 30 | 60 | 120;
 export type WordCountOption = 10 | 25 | 50 | 100;
@@ -41,6 +41,8 @@ export interface TestMetrics {
   wpm: number;
   netWpm: number;
   rawWpm: number;
+  burstWpm: number; // Peak rolling interval speed
+  speedLossWpm: number; // Raw WPM - Net WPM (accuracy tax)
   accuracy: number;
   totalChars: number;
   correctChars: number;
@@ -49,6 +51,7 @@ export interface TestMetrics {
   missedChars: number;
   elapsedSeconds: number;
   consistency: number; // percentage (0-100)
+  staminaRatio: number; // 2nd half speed / 1st half speed * 100
 }
 
 export interface TestResult extends TestMetrics {
@@ -58,6 +61,14 @@ export interface TestResult extends TestMetrics {
   modeConfig: string; // e.g. "30s", "25 words", "python"
   timeline: TimelineSample[];
   isPersonalBest?: boolean;
+}
+
+export interface DailyActivity {
+  date: string; // YYYY-MM-DD
+  count: number;
+  avgWpm: number;
+  bestWpm: number;
+  timeSeconds: number;
 }
 
 export interface ThemeConfig {
