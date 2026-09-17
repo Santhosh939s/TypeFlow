@@ -79,6 +79,10 @@ export function useTypingEngine(
     settings.timeDuration,
     settings.wordCount,
     settings.codeLanguage,
+    settings.dsaLanguage,
+    settings.selectedDsaId,
+    settings.selectedLearnId,
+    settings.learnCategory,
     settings.includePunctuation,
     settings.includeNumbers,
   ]);
@@ -359,3 +363,4 @@ export function useTypingEngine(
     repeatCurrentTest,
   };
 }
+

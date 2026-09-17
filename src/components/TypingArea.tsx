@@ -42,7 +42,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
 
   // Parse text into formatted lines and indentation
   const { lines, isCodeMode } = useMemo(() => {
-    return parseTextStructure(text, mode === 'code');
+    return parseTextStructure(text, mode === 'code' || mode === 'dsa');
   }, [text, mode]);
 
   // Detect touch device
@@ -281,3 +281,4 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     </div>
   );
 };
+
