@@ -45,13 +45,14 @@ body {
 /* Caret smooth transitions */
 .typing-caret {
   position: absolute;
-  top: 4px;
+  top: 0;
+  left: 0;
   width: 2.5px;
   height: 2rem;
   background-color: var(--color-caret);
   border-radius: 2px;
   box-shadow: 0 0 10px var(--color-caret);
-  transition: left 0.08s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.08s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.2, 1);
   pointer-events: none;
   z-index: 10;
 }
