@@ -6,11 +6,19 @@ import { TypingArea } from './components/TypingArea';
 import { ResultsModal } from './components/ResultsModal';
 import { HistoryModal } from './components/HistoryModal';
 import { ShortcutsBar } from './components/ShortcutsBar';
+import { InteractiveLearningCard } from './components/InteractiveLearningCard';
+import { InteractiveDsaCard } from './components/InteractiveDsaCard';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useTypingEngine } from './hooks/useTypingEngine';
 import { useSoundEffects } from './hooks/useSoundEffects';
 import { THEMES } from './constants/themes';
 import { TestResult, ThemeConfig, TestSettings } from './types';
+import {
+  getActiveLearnItem,
+  getNextLearnItemId,
+  getActiveDsaChallenge,
+  getNextDsaChallengeId,
+} from './utils/textGenerator';
 
 export function App() {
   const {
@@ -98,6 +106,22 @@ export function App() {
     repeatCurrentTest();
   };
 
+  // Next Learn Concept
+  const handleNextConcept = () => {
+    const nextId = getNextLearnItemId(settings.selectedLearnId || 'ml-overfitting', settings.learnCategory);
+    setSettings(prev => ({ ...prev, selectedLearnId: nextId }));
+    setCompletedResult(null);
+    initializeNewTest();
+  };
+
+  // Next DSA Challenge
+  const handleNextChallenge = () => {
+    const nextId = getNextDsaChallengeId(settings.selectedDsaId || 'dsa-fibonacci');
+    setSettings(prev => ({ ...prev, selectedDsaId: nextId }));
+    setCompletedResult(null);
+    initializeNewTest();
+  };
+
   // Keyboard shortcut listener: Tab to restart, Esc to clear modal
   useEffect(() => {
     const handleGlobalShortcuts = (e: KeyboardEvent) => {
@@ -165,6 +189,23 @@ export function App() {
               totalWords={words.length}
               status={status}
             />
+
+            {/* Interactive Concept Card (Learn Mode) */}
+            {settings.mode === 'learn' && (
+              <InteractiveLearningCard
+                item={getActiveLearnItem(settings)}
+                onNext={handleNextConcept}
+              />
+            )}
+
+            {/* Interactive Problem Card (DSA Challenges Mode) */}
+            {settings.mode === 'dsa' && (
+              <InteractiveDsaCard
+                challenge={getActiveDsaChallenge(settings)}
+                currentLanguage={settings.dsaLanguage || 'python'}
+                onNext={handleNextChallenge}
+              />
+            )}
 
             {/* Main Interactive Typing Area */}
             <TypingArea

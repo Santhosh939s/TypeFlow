@@ -109,6 +109,8 @@ export function useTypingEngine(
     let modeConfig = '';
     if (settings.mode === 'time') modeConfig = `${settings.timeDuration}s`;
     else if (settings.mode === 'words') modeConfig = `${settings.wordCount} words`;
+    else if (settings.mode === 'learn') modeConfig = settings.learnCategory;
+    else if (settings.mode === 'dsa') modeConfig = settings.dsaLanguage || 'python';
     else if (settings.mode === 'code') modeConfig = settings.codeLanguage;
     else modeConfig = 'quote';
 
@@ -124,7 +126,7 @@ export function useTypingEngine(
     };
 
     onComplete(testResult);
-  }, [currentInput, currentWordIndex, onComplete, settings.codeLanguage, settings.mode, settings.timeDuration, settings.wordCount, timeline, typedWords]);
+  }, [currentInput, currentWordIndex, onComplete, settings.codeLanguage, settings.dsaLanguage, settings.learnCategory, settings.mode, settings.timeDuration, settings.wordCount, timeline, typedWords]);
 
   // Start timer if idle
   const ensureTimerStarted = useCallback(() => {
