@@ -36,7 +36,7 @@ export function useTypingEngine(
     wordsRef.current = text.split(' ');
   }, [text]);
 
-  // Generate new text when test settings change
+  // Generate new test
   const initializeNewTest = useCallback((customText?: string) => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     
@@ -126,6 +126,89 @@ export function useTypingEngine(
     onComplete(testResult);
   }, [currentInput, currentWordIndex, onComplete, settings.codeLanguage, settings.mode, settings.timeDuration, settings.wordCount, timeline, typedWords]);
 
+  // Start timer if idle
+  const ensureTimerStarted = useCallback(() => {
+    if (status === 'idle') {
+      setStatus('running');
+      startTimeRef.current = performance.now();
+    }
+  }, [status]);
+
+  // Low-level character handler
+  const processCharacter = useCallback((char: string) => {
+    if (status === 'completed') return;
+    ensureTimerStarted();
+
+    const currentTargetWord = wordsRef.current[currentWordIndex] || '';
+    const expectedChar = currentTargetWord[currentInput.length];
+    const isMatch = char === expectedChar;
+
+    if (isMatch) {
+      playSound(false);
+      setCorrectKeystrokes(prev => prev + 1);
+    } else {
+      playErrorSound();
+      setIncorrectKeystrokes(prev => prev + 1);
+    }
+
+    setTotalKeystrokes(prev => prev + 1);
+    const nextInput = currentInput + char;
+    setCurrentInput(nextInput);
+
+    if (currentWordIndex === wordsRef.current.length - 1 && nextInput === currentTargetWord) {
+      const elapsed = startTimeRef.current ? (performance.now() - startTimeRef.current) / 1000 : 1;
+      finishTest(elapsed);
+    }
+  }, [currentInput, currentWordIndex, ensureTimerStarted, finishTest, playErrorSound, playSound, status]);
+
+  // Low-level space handler
+  const processSpace = useCallback(() => {
+    if (status === 'completed' || currentInput.length === 0) return;
+    ensureTimerStarted();
+
+    playSound(true);
+
+    const currentTargetWord = wordsRef.current[currentWordIndex] || '';
+    const nextTypedWords = [...typedWords, currentInput];
+    setTypedWords(nextTypedWords);
+    setTotalKeystrokes(prev => prev + 1);
+
+    if (currentInput === currentTargetWord) {
+      setCorrectKeystrokes(prev => prev + 1);
+    } else {
+      setIncorrectKeystrokes(prev => prev + 1);
+    }
+
+    if (currentWordIndex + 1 >= wordsRef.current.length) {
+      const elapsed = startTimeRef.current ? (performance.now() - startTimeRef.current) / 1000 : 1;
+      finishTest(elapsed);
+      return;
+    }
+
+    setCurrentWordIndex(prev => prev + 1);
+    setCurrentInput('');
+  }, [currentInput, currentWordIndex, ensureTimerStarted, finishTest, playSound, status, typedWords]);
+
+  // Low-level backspace handler
+  const processBackspace = useCallback((isWordDelete: boolean = false) => {
+    if (status === 'completed') return;
+
+    if (isWordDelete) {
+      setCurrentInput('');
+      return;
+    }
+
+    if (currentInput.length > 0) {
+      setCurrentInput(prev => prev.slice(0, -1));
+    } else if (currentWordIndex > 0) {
+      const prevIndex = currentWordIndex - 1;
+      const prevTyped = typedWords[prevIndex] || '';
+      setCurrentWordIndex(prevIndex);
+      setCurrentInput(prevTyped);
+      setTypedWords(prev => prev.slice(0, prevIndex));
+    }
+  }, [currentInput, currentWordIndex, status, typedWords]);
+
   // Timer tick effect
   useEffect(() => {
     if (status !== 'running') return;
@@ -146,7 +229,6 @@ export function useTypingEngine(
         }
       }
 
-      // Record second-by-second timeline data for graphs
       const currentSec = Math.floor(elapsedSec);
       setTimeline(prev => {
         if (prev.length === 0 || prev[prev.length - 1].second < currentSec) {
@@ -168,102 +250,55 @@ export function useTypingEngine(
     };
   }, [status, settings.mode, settings.timeDuration, correctKeystrokes, totalKeystrokes, incorrectKeystrokes, finishTest]);
 
-  // Handle keystroke input
+  // Physical keyboard key handler (Windows, Mac, Linux, Chromebook)
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement | HTMLDivElement>) => {
-    // Ignore meta keys (Alt, Ctrl, Cmd, etc. by themselves)
     if (['Control', 'Alt', 'Meta', 'Shift', 'CapsLock', 'Tab'].includes(e.key)) {
       return;
     }
 
     if (status === 'completed') return;
 
-    // Start test on first keypress
-    if (status === 'idle') {
-      setStatus('running');
-      startTimeRef.current = performance.now();
-    }
-
-    const currentTargetWord = wordsRef.current[currentWordIndex] || '';
-
-    // Handle Backspace
+    // Handle Backspace (Supports Ctrl+Backspace on Windows/Linux and Cmd+Backspace / Alt+Backspace on macOS)
     if (e.key === 'Backspace') {
       e.preventDefault();
-
-      if (e.ctrlKey) {
-        // Ctrl + Backspace: delete entire current word input
-        setCurrentInput('');
-        return;
-      }
-
-      if (currentInput.length > 0) {
-        setCurrentInput(prev => prev.slice(0, -1));
-      } else if (currentWordIndex > 0) {
-        // Jump back to previous word if allowed
-        const prevIndex = currentWordIndex - 1;
-        const prevTyped = typedWords[prevIndex] || '';
-        setCurrentWordIndex(prevIndex);
-        setCurrentInput(prevTyped);
-        setTypedWords(prev => prev.slice(0, prevIndex));
-      }
+      const isWordDelete = e.ctrlKey || e.metaKey || e.altKey;
+      processBackspace(isWordDelete);
       return;
     }
 
-    // Handle Space (Word completion)
+    // Handle Space
     if (e.key === ' ') {
       e.preventDefault();
-      if (currentInput.length === 0) return; // Prevent empty spaces
-
-      playSound(true);
-
-      const nextTypedWords = [...typedWords, currentInput];
-      setTypedWords(nextTypedWords);
-      setTotalKeystrokes(prev => prev + 1);
-
-      // Check if space itself was correct
-      if (currentInput === currentTargetWord) {
-        setCorrectKeystrokes(prev => prev + 1);
-      } else {
-        setIncorrectKeystrokes(prev => prev + 1);
-      }
-
-      // Check if completed last word
-      if (currentWordIndex + 1 >= wordsRef.current.length) {
-        const elapsed = startTimeRef.current ? (performance.now() - startTimeRef.current) / 1000 : 1;
-        finishTest(elapsed);
-        return;
-      }
-
-      setCurrentWordIndex(prev => prev + 1);
-      setCurrentInput('');
+      processSpace();
       return;
     }
 
-    // Standard single character key
+    // Single character
     if (e.key.length === 1) {
       e.preventDefault();
+      processCharacter(e.key);
+    }
+  }, [status, processBackspace, processSpace, processCharacter]);
 
-      const expectedChar = currentTargetWord[currentInput.length];
-      const isMatch = e.key === expectedChar;
+  // Mobile virtual keyboard input handler
+  const handleMobileInput = useCallback((val: string) => {
+    if (status === 'completed') return;
 
-      if (isMatch) {
-        playSound(false);
-        setCorrectKeystrokes(prev => prev + 1);
-      } else {
-        playErrorSound();
-        setIncorrectKeystrokes(prev => prev + 1);
-      }
-
-      setTotalKeystrokes(prev => prev + 1);
-      const nextInput = currentInput + e.key;
-      setCurrentInput(nextInput);
-
-      // In quotes or single-word code mode, check if word completed without space
-      if (currentWordIndex === wordsRef.current.length - 1 && nextInput === currentTargetWord) {
-        const elapsed = startTimeRef.current ? (performance.now() - startTimeRef.current) / 1000 : 1;
-        finishTest(elapsed);
+    if (val.endsWith(' ')) {
+      processSpace();
+    } else if (val.length < currentInput.length) {
+      processBackspace(false);
+    } else if (val.length > currentInput.length) {
+      const addedChars = val.slice(currentInput.length);
+      for (const char of addedChars) {
+        if (char === ' ') {
+          processSpace();
+        } else {
+          processCharacter(char);
+        }
       }
     }
-  }, [status, currentWordIndex, currentInput, playSound, typedWords, playErrorSound, finishTest]);
+  }, [status, currentInput.length, processSpace, processBackspace, processCharacter]);
 
   // Live real-time metrics
   const liveMetrics: TestMetrics = calculateMetrics(
@@ -286,6 +321,7 @@ export function useTypingEngine(
     elapsedTime,
     liveMetrics,
     handleKeyDown,
+    handleMobileInput,
     initializeNewTest,
     repeatCurrentTest,
   };

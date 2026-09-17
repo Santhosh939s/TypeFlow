@@ -62,6 +62,7 @@ export function App() {
     timeLeft,
     liveMetrics,
     handleKeyDown,
+    handleMobileInput,
     initializeNewTest,
     repeatCurrentTest,
   } = useTypingEngine(settings, handleTestCompleted, playKeySound, playErrorSound);
@@ -127,7 +128,7 @@ export function App() {
   }, [initializeNewTest, isHistoryOpen, completedResult]);
 
   return (
-    <div className="min-h-screen flex flex-col justify-between transition-colors duration-300">
+    <div className="min-h-[100dvh] flex flex-col justify-between transition-colors duration-300">
       {/* Top Navbar */}
       <Header
         currentThemeId={activeTheme.id}
@@ -172,6 +173,7 @@ export function App() {
               currentInput={currentInput}
               typedWords={typedWords}
               onKeyDown={handleKeyDown}
+              onMobileInput={handleMobileInput}
               status={status}
             />
 

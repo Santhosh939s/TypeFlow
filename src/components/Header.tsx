@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, VolumeX, History, Palette, Sparkles } from 'lucide-react';
+import { Volume2, VolumeX, History, Palette, Sparkles, Maximize2, Minimize2 } from 'lucide-react';
 import { THEMES } from '../constants/themes';
 import { ThemeConfig } from '../types';
 
@@ -19,6 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenHistory,
 }) => {
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -32,32 +33,58 @@ export const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Monitor fullscreen change
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
+
   const currentTheme = THEMES.find(t => t.id === currentThemeId) || THEMES[0];
 
   return (
-    <header className="w-full max-w-5xl mx-auto pt-6 pb-4 px-4 flex items-center justify-between border-b border-white/5">
+    <header className="w-full max-w-5xl mx-auto pt-4 sm:pt-6 pb-4 px-3 sm:px-4 flex items-center justify-between border-b border-white/5">
       {/* Brand Logo */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-theme-main/10 border border-theme-main/30 flex items-center justify-center text-theme-main shadow-[0_0_20px_rgba(16,185,129,0.15)] transition-all hover:scale-105">
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-theme-main/10 border border-theme-main/30 flex items-center justify-center text-theme-main shadow-[0_0_20px_rgba(16,185,129,0.15)] transition-all hover:scale-105">
           <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
             <path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm0 2v8h16V8H4zm2 2h2v2H6v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2zM6 13h12v2H6v-2z" />
           </svg>
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-1.5">
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-1.5">
               Type<span className="text-theme-main">Flow</span>
             </h1>
-            <span className="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-white/5 text-theme-sub border border-white/10">
-              v1.0
+            <span className="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-white/5 text-theme-sub border border-white/10 hidden xs:inline-block">
+              v1.1
             </span>
           </div>
-          <p className="text-xs text-theme-sub hidden sm:block">Minimalist & Precision Typing Engine</p>
+          <p className="text-xs text-theme-sub hidden md:block">Minimalist & Precision Typing Engine</p>
         </div>
       </div>
 
       {/* Action Controls */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-2.5">
+        {/* Fullscreen Toggle */}
+        <button
+          onClick={toggleFullscreen}
+          title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          className="p-2 rounded-lg text-xs font-medium text-theme-sub hover:text-white bg-white/5 border border-white/5 hover:border-white/20 transition-all hidden sm:flex items-center justify-center"
+        >
+          {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+        </button>
+
         {/* Sound Toggle */}
         <button
           onClick={onToggleSound}
