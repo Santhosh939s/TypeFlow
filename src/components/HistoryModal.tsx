@@ -1,8 +1,11 @@
-﻿import React, { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { X, Trophy, Trash2, Calendar, Award, Download, Flame, Clock, BarChart3, Zap } from 'lucide-react';
 import { TestResult } from '../types';
 import { ActivityHeatmap } from './ActivityHeatmap';
 import { exportHistoryToCSV, calculateStreak } from '../utils/metrics';
+
+import { useAuth } from '../context/AuthContext';
+import { Cloud } from 'lucide-react';
 
 interface HistoryModalProps {
   isOpen: boolean;
@@ -19,7 +22,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
   personalBests,
   onClearHistory,
 }) => {
-  if (!isOpen) return null;
+  const { user, openAuthModal } = useAuth();
 
   const pbEntries = Object.entries(personalBests);
 
@@ -77,6 +80,8 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
       <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-3xl bg-[#11141c] border border-white/10 shadow-2xl overflow-hidden font-mono">
@@ -87,8 +92,28 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
               <Award size={20} />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white font-sans">Practice Dashboard & Analytics</h2>
-              <p className="text-xs text-theme-sub">Activity Heatmap, speed parameters, and complete local history</p>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-white font-sans">Practice Dashboard & Analytics</h2>
+                {user ? (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-sans font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                    <Cloud size={10} />
+                    <span>Cloud Records</span>
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      openAuthModal('signin');
+                    }}
+                    className="px-2 py-0.5 rounded-full text-[10px] font-sans font-medium bg-white/5 text-theme-sub hover:text-white border border-white/10 hover:border-white/20 transition-all flex items-center gap-1"
+                    title="Sign in to save records to your account"
+                  >
+                    <Cloud size={10} />
+                    <span>Sign In to Save Records</span>
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-theme-sub">Activity Heatmap, speed parameters, and session history</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

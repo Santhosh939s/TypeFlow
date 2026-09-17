@@ -5,14 +5,19 @@ import { LiveStatsBar } from './components/LiveStatsBar';
 import { TypingArea } from './components/TypingArea';
 import { ResultsModal } from './components/ResultsModal';
 import { HistoryModal } from './components/HistoryModal';
+import { LeaderboardModal } from './components/LeaderboardModal';
+import { AuthModal } from './components/AuthModal';
 import { ShortcutsBar } from './components/ShortcutsBar';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useTypingEngine } from './hooks/useTypingEngine';
 import { useSoundEffects } from './hooks/useSoundEffects';
+import { useAuth } from './context/AuthContext';
 import { THEMES } from './constants/themes';
 import { TestResult, ThemeConfig, TestSettings } from './types';
 
 export function App() {
+  const { user, isConfigured, authModalOpen, closeAuthModal } = useAuth();
+
   const {
     settings,
     setSettings,
@@ -28,6 +33,7 @@ export function App() {
 
   const [completedResult, setCompletedResult] = useState<TestResult | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
   // Mechanical switch audio effects hook
   const { playKeySound, playErrorSound, playSuccessSound } = useSoundEffects(settings.soundEnabled);
@@ -46,11 +52,14 @@ export function App() {
     root.style.setProperty('--color-caret', colors.caret);
   }, [activeTheme]);
 
-  const handleTestCompleted = useCallback((result: TestResult) => {
-    playSuccessSound();
-    const { isPB } = saveTestResult(result);
-    setCompletedResult({ ...result, isPersonalBest: isPB });
-  }, [playSuccessSound, saveTestResult]);
+  const handleTestCompleted = useCallback(
+    (result: TestResult) => {
+      playSuccessSound();
+      const { isPB } = saveTestResult(result);
+      setCompletedResult({ ...result, isPersonalBest: isPB });
+    },
+    [playSuccessSound, saveTestResult]
+  );
 
   // Core typing engine
   const {
@@ -98,11 +107,30 @@ export function App() {
     repeatCurrentTest();
   };
 
-  // Keyboard shortcut listener: Tab to restart, Esc to clear modal
+  const isAnyModalOpen = isHistoryOpen || isLeaderboardOpen || authModalOpen;
+
+  // Keyboard shortcut listener: Tab to restart, Esc to clear modals
   useEffect(() => {
     const handleGlobalShortcuts = (e: KeyboardEvent) => {
-      // Tab key restarts test
+      const activeEl = document.activeElement as HTMLElement | null;
+      const isTypingInInput =
+        activeEl &&
+        (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable) &&
+        activeEl.getAttribute('aria-label') !== 'Typing input box';
+
+      // If user is inside a form input, never intercept (except Escape to dismiss)
+      if (isTypingInInput) {
+        if (e.key === 'Escape' && authModalOpen) {
+          closeAuthModal();
+        }
+        return;
+      }
+
+      // Tab key restarts test ONLY if no modal is active
       if (e.key === 'Tab') {
+        if (isAnyModalOpen) {
+          return; // Allow native Tab switching inside forms & modals
+        }
         e.preventDefault();
         setCompletedResult(null);
         initializeNewTest();
@@ -111,6 +139,14 @@ export function App() {
 
       // Escape key closes modals
       if (e.key === 'Escape') {
+        if (authModalOpen) {
+          closeAuthModal();
+          return;
+        }
+        if (isLeaderboardOpen) {
+          setIsLeaderboardOpen(false);
+          return;
+        }
         if (isHistoryOpen) {
           setIsHistoryOpen(false);
           return;
@@ -125,7 +161,7 @@ export function App() {
 
     window.addEventListener('keydown', handleGlobalShortcuts);
     return () => window.removeEventListener('keydown', handleGlobalShortcuts);
-  }, [initializeNewTest, isHistoryOpen, completedResult]);
+  }, [initializeNewTest, isAnyModalOpen, isHistoryOpen, isLeaderboardOpen, authModalOpen, completedResult, closeAuthModal]);
 
   return (
     <div className="min-h-[100dvh] flex flex-col justify-between transition-colors duration-300">
@@ -136,6 +172,7 @@ export function App() {
         soundEnabled={settings.soundEnabled}
         onToggleSound={handleToggleSound}
         onOpenHistory={() => setIsHistoryOpen(true)}
+        onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -175,6 +212,7 @@ export function App() {
               onKeyDown={handleKeyDown}
               onMobileInput={handleMobileInput}
               status={status}
+              disabled={isAnyModalOpen}
             />
 
             {/* Bottom Shortcuts reference */}
@@ -183,7 +221,7 @@ export function App() {
         )}
       </main>
 
-      {/* Persistent History & Personal Best Modal */}
+      {/* Persistent History & Analytics Modal */}
       <HistoryModal
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
@@ -192,11 +230,32 @@ export function App() {
         onClearHistory={clearHistory}
       />
 
+      {/* Community Leaderboard Modal */}
+      <LeaderboardModal
+        isOpen={isLeaderboardOpen}
+        onClose={() => setIsLeaderboardOpen(false)}
+      />
+
+      {/* Authentication & Profile Modal */}
+      <AuthModal />
+
       {/* Footer */}
       <footer className="w-full max-w-5xl mx-auto py-6 px-4 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs text-theme-sub gap-2">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-theme-main animate-pulse" />
-          <span>Client-Side Engine &middot; 100% Offline Capable</span>
+          <span
+            className={`w-2 h-2 rounded-full ${
+              user && isConfigured
+                ? 'bg-emerald-400 animate-pulse'
+                : 'bg-theme-main animate-pulse'
+            }`}
+          />
+          <span>
+            {user && isConfigured
+              ? '100% Online &middot; Cloud Database Connected'
+              : isConfigured
+              ? 'Online Platform &middot; Sign in to record stats'
+              : 'Supabase Database Setup Required'}
+          </span>
         </div>
         <div>
           <span>TypeFlow &mdash; Built for Speed & Focus</span>
