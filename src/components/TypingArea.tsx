@@ -70,7 +70,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     if (activeCharRef.current) {
       const charRect = activeCharRef.current.getBoundingClientRect();
       setCaretPos({
-        left: charRect.left - containerRect.left,
+        left: charRect.right - containerRect.left,
         top: charRect.top - containerRect.top + (wordsContainerRef.current.scrollTop || 0),
         height: charRect.height || 28,
       });
