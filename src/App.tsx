@@ -8,12 +8,20 @@ import { HistoryModal } from './components/HistoryModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { AuthModal } from './components/AuthModal';
 import { ShortcutsBar } from './components/ShortcutsBar';
+import { InteractiveLearningCard } from './components/InteractiveLearningCard';
+import { InteractiveDsaCard } from './components/InteractiveDsaCard';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useTypingEngine } from './hooks/useTypingEngine';
 import { useSoundEffects } from './hooks/useSoundEffects';
 import { useAuth } from './context/AuthContext';
 import { THEMES } from './constants/themes';
 import { TestResult, ThemeConfig, TestSettings } from './types';
+import {
+  getActiveLearnItem,
+  getNextLearnItemId,
+  getActiveDsaChallenge,
+  getNextDsaChallengeId,
+} from './utils/textGenerator';
 
 export function App() {
   const { user, isConfigured, authModalOpen, closeAuthModal } = useAuth();
@@ -63,6 +71,7 @@ export function App() {
 
   // Core typing engine
   const {
+    text,
     words,
     currentWordIndex,
     currentInput,
@@ -92,7 +101,7 @@ export function App() {
     const newSettings = { ...settings, ...updates };
     setSettings(newSettings);
     setCompletedResult(null);
-    initializeNewTest();
+    initializeNewTest(undefined, newSettings);
   };
 
   // Start a fresh test
@@ -105,6 +114,22 @@ export function App() {
   const handleRepeatTest = () => {
     setCompletedResult(null);
     repeatCurrentTest();
+  };
+
+  // Next Learn Concept
+  const handleNextConcept = () => {
+    const nextId = getNextLearnItemId(settings.selectedLearnId || 'ml-overfitting', settings.learnCategory);
+    setSettings(prev => ({ ...prev, selectedLearnId: nextId }));
+    setCompletedResult(null);
+    initializeNewTest();
+  };
+
+  // Next DSA Challenge
+  const handleNextChallenge = () => {
+    const nextId = getNextDsaChallengeId(settings.selectedDsaId || 'dsa-fibonacci');
+    setSettings(prev => ({ ...prev, selectedDsaId: nextId }));
+    setCompletedResult(null);
+    initializeNewTest();
   };
 
   const isAnyModalOpen = isHistoryOpen || isLeaderboardOpen || authModalOpen;
@@ -203,8 +228,27 @@ export function App() {
               status={status}
             />
 
+            {/* Interactive Concept Card (Learn Mode) */}
+            {settings.mode === 'learn' && (
+              <InteractiveLearningCard
+                item={getActiveLearnItem(settings)}
+                onNext={handleNextConcept}
+              />
+            )}
+
+            {/* Interactive Problem Card (DSA Challenges Mode) */}
+            {settings.mode === 'dsa' && (
+              <InteractiveDsaCard
+                challenge={getActiveDsaChallenge(settings)}
+                currentLanguage={settings.dsaLanguage || 'python'}
+                onNext={handleNextChallenge}
+              />
+            )}
+
             {/* Main Interactive Typing Area */}
             <TypingArea
+              text={text}
+              mode={settings.mode}
               words={words}
               currentWordIndex={currentWordIndex}
               currentInput={currentInput}
@@ -266,3 +310,8 @@ export function App() {
 }
 
 export default App;
+
+
+
+
+

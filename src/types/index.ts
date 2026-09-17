@@ -1,14 +1,44 @@
-export type TestMode = 'time' | 'words' | 'code' | 'quotes';
+export type TestMode = 'time' | 'words' | 'learn' | 'dsa' | 'code' | 'quotes';
+
 
 export type TimeDuration = 15 | 30 | 60 | 120;
 export type WordCountOption = 10 | 25 | 50 | 100;
 export type CodeLanguage = 'javascript' | 'python' | 'typescript' | 'html_css';
+
+export type LearnCategory = 'all' | 'machine_learning' | 'system_design' | 'cs_core' | 'web_dev';
+
+export type DsaLanguage = 'python' | 'javascript' | 'typescript' | 'cpp' | 'java';
+
+export interface LearnItem {
+  id: string;
+  term: string;
+  category: LearnCategory;
+  categoryLabel: string;
+  definition: string;
+  takeaway: string;
+  difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
+}
+
+export interface DsaChallenge {
+  id: string;
+  title: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  category: string;
+  timeComplexity: string;
+  spaceComplexity: string;
+  description: string;
+  solutions: Record<DsaLanguage, string>;
+}
 
 export interface TestSettings {
   mode: TestMode;
   timeDuration: TimeDuration;
   wordCount: WordCountOption;
   codeLanguage: CodeLanguage;
+  learnCategory: LearnCategory;
+  selectedLearnId: string;
+  selectedDsaId: string;
+  dsaLanguage: DsaLanguage;
   includePunctuation: boolean;
   includeNumbers: boolean;
   soundEnabled: boolean;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { TestSettings, TestResult, TimelineSample, TestMetrics } from '../types';
 import { generateTestText } from '../utils/textGenerator';
 import { calculateMetrics } from '../utils/metrics';
@@ -10,7 +10,7 @@ export function useTypingEngine(
   playErrorSound: () => void
 ) {
   const [text, setText] = useState<string>(() => generateTestText(settings));
-  const words = useRef<string[]>(text.split(' '));
+  const wordsRef = useRef<string[]>(text.split(/\s+/).filter(w => w.length > 0));
 
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [currentInput, setCurrentInput] = useState('');
@@ -29,26 +29,26 @@ export function useTypingEngine(
 
   const startTimeRef = useRef<number | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const wordsRef = useRef<string[]>(words.current);
 
   // Sync wordsRef when text changes
   useEffect(() => {
-    wordsRef.current = text.split(' ');
+    wordsRef.current = text.split(/\s+/).filter(w => w.length > 0);
   }, [text]);
 
   // Generate new test
-  const initializeNewTest = useCallback((customText?: string) => {
+  const initializeNewTest = useCallback((customText?: string, customSettings?: TestSettings) => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     
-    const newText = customText ?? generateTestText(settings);
+    const activeSettings = customSettings ?? settings;
+    const newText = customText ?? generateTestText(activeSettings);
     setText(newText);
-    wordsRef.current = newText.split(' ');
+    wordsRef.current = newText.split(/\s+/).filter(w => w.length > 0);
 
     setCurrentWordIndex(0);
     setCurrentInput('');
     setTypedWords([]);
     setStatus('idle');
-    setTimeLeft(settings.timeDuration);
+    setTimeLeft(activeSettings.timeDuration);
     setElapsedTime(0);
     setTotalKeystrokes(0);
     setCorrectKeystrokes(0);
@@ -56,6 +56,36 @@ export function useTypingEngine(
     setTimeline([]);
     startTimeRef.current = null;
   }, [settings]);
+
+  // Reactive sync when settings change while in idle state
+  useEffect(() => {
+    if (status === 'idle') {
+      const newText = generateTestText(settings);
+      setText(newText);
+      wordsRef.current = newText.split(/\s+/).filter(w => w.length > 0);
+      setTimeLeft(settings.timeDuration);
+      setCurrentWordIndex(0);
+      setCurrentInput('');
+      setTypedWords([]);
+      setElapsedTime(0);
+      setTotalKeystrokes(0);
+      setCorrectKeystrokes(0);
+      setIncorrectKeystrokes(0);
+      setTimeline([]);
+      startTimeRef.current = null;
+    }
+  }, [
+    settings.mode,
+    settings.timeDuration,
+    settings.wordCount,
+    settings.codeLanguage,
+    settings.dsaLanguage,
+    settings.selectedDsaId,
+    settings.selectedLearnId,
+    settings.learnCategory,
+    settings.includePunctuation,
+    settings.includeNumbers,
+  ]);
 
   // Repeat same test
   const repeatCurrentTest = useCallback(() => {
@@ -109,6 +139,8 @@ export function useTypingEngine(
     let modeConfig = '';
     if (settings.mode === 'time') modeConfig = `${settings.timeDuration}s`;
     else if (settings.mode === 'words') modeConfig = `${settings.wordCount} words`;
+    else if (settings.mode === 'learn') modeConfig = settings.learnCategory;
+    else if (settings.mode === 'dsa') modeConfig = settings.dsaLanguage || 'python';
     else if (settings.mode === 'code') modeConfig = settings.codeLanguage;
     else modeConfig = 'quote';
 
@@ -124,7 +156,7 @@ export function useTypingEngine(
     };
 
     onComplete(testResult);
-  }, [currentInput, currentWordIndex, onComplete, settings.codeLanguage, settings.mode, settings.timeDuration, settings.wordCount, timeline, typedWords]);
+  }, [currentInput, currentWordIndex, onComplete, settings.codeLanguage, settings.dsaLanguage, settings.learnCategory, settings.mode, settings.timeDuration, settings.wordCount, timeline, typedWords]);
 
   // Start timer if idle
   const ensureTimerStarted = useCallback(() => {
@@ -161,7 +193,7 @@ export function useTypingEngine(
     }
   }, [currentInput, currentWordIndex, ensureTimerStarted, finishTest, playErrorSound, playSound, status]);
 
-  // Low-level space handler
+  // Low-level space/enter handler
   const processSpace = useCallback(() => {
     if (status === 'completed' || currentInput.length === 0) return;
     ensureTimerStarted();
@@ -179,7 +211,8 @@ export function useTypingEngine(
       setIncorrectKeystrokes(prev => prev + 1);
     }
 
-    if (currentWordIndex + 1 >= wordsRef.current.length) {
+    // Check if test completed
+    if (currentWordIndex >= wordsRef.current.length - 1) {
       const elapsed = startTimeRef.current ? (performance.now() - startTimeRef.current) / 1000 : 1;
       finishTest(elapsed);
       return;
@@ -190,11 +223,18 @@ export function useTypingEngine(
   }, [currentInput, currentWordIndex, ensureTimerStarted, finishTest, playSound, status, typedWords]);
 
   // Low-level backspace handler
-  const processBackspace = useCallback((isWordDelete: boolean = false) => {
+  const processBackspace = useCallback((isWordDelete: boolean) => {
     if (status === 'completed') return;
 
     if (isWordDelete) {
-      setCurrentInput('');
+      if (currentInput.length > 0) {
+        setCurrentInput('');
+      } else if (currentWordIndex > 0) {
+        const prevIndex = currentWordIndex - 1;
+        setCurrentWordIndex(prevIndex);
+        setCurrentInput('');
+        setTypedWords(prev => prev.slice(0, prevIndex));
+      }
       return;
     }
 
@@ -250,7 +290,7 @@ export function useTypingEngine(
     };
   }, [status, settings.mode, settings.timeDuration, correctKeystrokes, totalKeystrokes, incorrectKeystrokes, finishTest]);
 
-  // Physical keyboard key handler (Windows, Mac, Linux, Chromebook)
+  // Physical keyboard key handler
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement | HTMLDivElement>) => {
     if (['Control', 'Alt', 'Meta', 'Shift', 'CapsLock', 'Tab'].includes(e.key)) {
       return;
@@ -258,7 +298,7 @@ export function useTypingEngine(
 
     if (status === 'completed') return;
 
-    // Handle Backspace (Supports Ctrl+Backspace on Windows/Linux and Cmd+Backspace / Alt+Backspace on macOS)
+    // Handle Backspace
     if (e.key === 'Backspace') {
       e.preventDefault();
       const isWordDelete = e.ctrlKey || e.metaKey || e.altKey;
@@ -266,8 +306,8 @@ export function useTypingEngine(
       return;
     }
 
-    // Handle Space
-    if (e.key === ' ') {
+    // Handle Space and Enter
+    if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       processSpace();
       return;
@@ -284,21 +324,18 @@ export function useTypingEngine(
   const handleMobileInput = useCallback((val: string) => {
     if (status === 'completed') return;
 
-    if (val.endsWith(' ')) {
-      processSpace();
-    } else if (val.length < currentInput.length) {
+    if (val.length < currentInput.length) {
       processBackspace(false);
-    } else if (val.length > currentInput.length) {
-      const addedChars = val.slice(currentInput.length);
-      for (const char of addedChars) {
-        if (char === ' ') {
-          processSpace();
-        } else {
-          processCharacter(char);
-        }
-      }
+      return;
     }
-  }, [status, currentInput.length, processSpace, processBackspace, processCharacter]);
+
+    const lastChar = val[val.length - 1];
+    if (lastChar === ' ' || lastChar === '\n') {
+      processSpace();
+    } else {
+      processCharacter(lastChar);
+    }
+  }, [currentInput.length, processBackspace, processCharacter, processSpace, status]);
 
   // Live real-time metrics
   const liveMetrics: TestMetrics = calculateMetrics(
@@ -326,3 +363,4 @@ export function useTypingEngine(
     repeatCurrentTest,
   };
 }
+

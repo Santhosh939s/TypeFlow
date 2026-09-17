@@ -2,7 +2,6 @@
 
 > A modern, lightning-fast, and minimalist client-side typing practice web application with real-time metrics, SVG pace analytics, multi-mode passage generation, activity heatmaps, and offline persistence.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React](https://img.shields.io/badge/React-18-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-teal)
@@ -33,10 +32,11 @@
   - Detailed modal aggregating total tests, total typing time (`HH:MM:SS`), peak personal records, all-time averages, and last 10-test averages.
   - **Export CSV**: Download complete local typing session history as a `.csv` spreadsheet for personal tracking.
 
-- **Multiple Practice Modes**:
+- **Multiple Practice & Learning Modes**:
+  - **🧠 Learn Mode (Concept Definitions)**: Type high-yield definitions across **Machine Learning & AI** (Overfitting, Transformers, Gradient Descent, Backpropagation, Attention), **System Design** (CAP Theorem, ACID, Caching, Sharding, Event-Driven), and **CS Core** with interactive knowledge cards and key takeaways.
+  - **⚡ DSA Coding Challenges**: Practice canonical interview solutions for famous problems (**Fibonacci Sequence**, **Two Sum**, **Binary Search**, **Valid Palindrome**, **Reverse Linked List**, **Valid Parentheses**, **Kadane's Algorithm**) across **Python**, **JavaScript**, **TypeScript**, **C++**, and **Java** with Time/Space complexity tags ($O(n)$, $O(\log n)$).
   - **Time Countdown**: 15s, 30s, 60s, 120s
   - **Word Count**: 10, 25, 50, 100 words
-  - **Code Practice**: JavaScript, TypeScript, Python, HTML/CSS snippets
   - **Quotes**: Curated programming and philosophy quotes
   - **Modifiers**: Optional `@ Punctuation` and `# Numbers` injection
 
@@ -146,7 +146,3 @@ npm run preview
    git push -u origin feature/your-feature-name
    ```
 
----
-
-## 📄 License
-MIT License.
