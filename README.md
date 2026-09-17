@@ -1,8 +1,7 @@
-﻿# TypeFlow ⚡
+# TypeFlow ⚡
 
 > A modern, lightning-fast, and minimalist client-side typing practice web application with real-time metrics, SVG pace analytics, multi-mode passage generation, activity heatmaps, and offline persistence.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React](https://img.shields.io/badge/React-18-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-teal)
@@ -121,7 +120,3 @@ npm run preview
    git push -u origin feature/your-feature-name
    ```
 
----
-
-## 📄 License
-MIT License.
