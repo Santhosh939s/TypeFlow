@@ -92,7 +92,7 @@ export function App() {
     const newSettings = { ...settings, ...updates };
     setSettings(newSettings);
     setCompletedResult(null);
-    initializeNewTest();
+    initializeNewTest(undefined, newSettings);
   };
 
   // Start a fresh test
@@ -251,6 +251,8 @@ export function App() {
 }
 
 export default App;
+
+
 
 
 
