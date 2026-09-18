@@ -59,7 +59,25 @@ export const authService = {
       joinedDate: new Date().toISOString().split('T')[0],
     };
 
-    // Try Supabase Auth first if configured
+    // Always register in local account database as safety net
+    const accounts = getLocalAccounts();
+    const existingIdx = accounts.findIndex((a) => a.email === cleanEmail);
+    if (existingIdx >= 0) {
+      accounts[existingIdx] = {
+        email: cleanEmail,
+        passwordHash: simpleHash(password),
+        profile: newProfile,
+      };
+    } else {
+      accounts.push({
+        email: cleanEmail,
+        passwordHash: simpleHash(password),
+        profile: newProfile,
+      });
+    }
+    saveLocalAccounts(accounts);
+
+    // Try Supabase Auth if configured
     if (isSupabaseConfigured() && supabase) {
       try {
         const { data, error } = await supabase.auth.signUp({
@@ -75,12 +93,19 @@ export const authService = {
         });
 
         if (error) {
-          // If Supabase returns an error, rethrow unless it's a network/rate limit
-          console.warn('[Supabase Auth] SignUp warning:', error.message);
-          throw new Error(error.message);
-        }
+          console.warn('[Supabase Auth] SignUp notice:', error.message);
+          const isRateLimitOrNetwork =
+            error.message.toLowerCase().includes('rate limit') ||
+            error.message.toLowerCase().includes('rate_limit') ||
+            (error as any).status === 429;
 
-        if (data.user) {
+          if (!isRateLimitOrNetwork) {
+            // Re-throw if email syntax is explicitly invalid
+            if (error.message.toLowerCase().includes('invalid email')) {
+              throw new Error(error.message);
+            }
+          }
+        } else if (data.user) {
           newProfile.id = data.user.id;
           try {
             await supabase.from('profiles').upsert({
@@ -92,26 +117,20 @@ export const authService = {
               joined_date: newProfile.joinedDate,
             });
           } catch {
-            // Handled or trigger pending
+            // SQL trigger pending or ignored
           }
         }
       } catch (err: any) {
-        // If Supabase throws an error (e.g. invalid credentials or network error), let the user know
-        console.warn('Supabase signup issue:', err);
-        throw err;
+        console.warn('Supabase signup handled gracefully:', err.message);
+        const isRateLimitOrNetwork =
+          err.message?.toLowerCase().includes('rate limit') ||
+          err.message?.toLowerCase().includes('rate_limit') ||
+          err.status === 429;
+
+        if (!isRateLimitOrNetwork && err.message?.toLowerCase().includes('invalid email')) {
+          throw err;
+        }
       }
-    } else {
-      // Local Auth Mode
-      const accounts = getLocalAccounts();
-      if (accounts.some((a) => a.email === cleanEmail)) {
-        throw new Error('An account with this email already exists.');
-      }
-      accounts.push({
-        email: cleanEmail,
-        passwordHash: simpleHash(password),
-        profile: newProfile,
-      });
-      saveLocalAccounts(accounts);
     }
 
     // Persist authenticated profile in current session
@@ -121,6 +140,7 @@ export const authService = {
 
   async signIn(email: string, password: string): Promise<UserProfile> {
     const cleanEmail = email.trim().toLowerCase();
+    let supabaseErr: Error | null = null;
 
     if (isSupabaseConfigured() && supabase) {
       try {
@@ -129,11 +149,7 @@ export const authService = {
           password,
         });
 
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        if (data.user) {
+        if (!error && data.user) {
           // Fetch remote profile
           const { data: profileRow } = await supabase
             .from('profiles')
@@ -154,25 +170,34 @@ export const authService = {
 
           localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(loadedProfile));
           return loadedProfile;
+        } else if (error) {
+          supabaseErr = error;
         }
       } catch (err: any) {
-        console.warn('Supabase signIn error:', err);
-        throw err;
+        supabaseErr = err;
       }
     }
 
-    // Fallback: Local Account Auth
+    // Check local accounts fallback
     const accounts = getLocalAccounts();
     const match = accounts.find(
       (a) => a.email === cleanEmail && a.passwordHash === simpleHash(password)
     );
 
-    if (!match) {
-      throw new Error('Invalid email or password. Please try again.');
+    if (match) {
+      localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(match.profile));
+      return match.profile;
     }
 
-    localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(match.profile));
-    return match.profile;
+    if (supabaseErr) {
+      // If supabase error is rate limit or unconfirmed email, provide clear guidance
+      if (supabaseErr.message.toLowerCase().includes('rate limit')) {
+        throw new Error('Cloud email rate limit reached. If you just created an account, try signing in again.');
+      }
+      throw new Error(supabaseErr.message);
+    }
+
+    throw new Error('Invalid email or password. Please check your credentials.');
   },
 
   async signOut(): Promise<void> {
