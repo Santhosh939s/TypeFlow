@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Volume2, VolumeX, History, Palette, Sparkles, Maximize2, Minimize2 } from 'lucide-react';
 import { THEMES } from '../constants/themes';
-import { ThemeConfig } from '../types';
+import { ThemeConfig, UserProfile } from '../types';
+import { Identicon } from './Identicon';
 
 interface HeaderProps {
   currentThemeId: string;
@@ -9,6 +10,8 @@ interface HeaderProps {
   soundEnabled: boolean;
   onToggleSound: () => void;
   onOpenHistory: () => void;
+  profile: UserProfile;
+  onOpenProfile: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -17,6 +20,8 @@ export const Header: React.FC<HeaderProps> = ({
   soundEnabled,
   onToggleSound,
   onOpenHistory,
+  profile,
+  onOpenProfile,
 }) => {
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -97,6 +102,31 @@ export const Header: React.FC<HeaderProps> = ({
         >
           {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           <span className="hidden md:inline">{soundEnabled ? 'Sound On' : 'Sound Off'}</span>
+        </button>
+
+        {/* Profile / Account Trigger */}
+        <button
+          onClick={onOpenProfile}
+          title="Account Profile & Custom Avatar"
+          className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 bg-white/5 text-white border border-white/10 hover:border-theme-main/40 hover:bg-white/10 transition-all group"
+        >
+          {profile.customAvatar ? (
+            <img
+              src={profile.customAvatar}
+              alt={profile.username}
+              className="w-5 h-5 rounded-md object-cover ring-1 ring-white/20 group-hover:ring-theme-main/50 transition-all"
+            />
+          ) : (
+            <Identicon
+              seed={profile.avatarSeed || profile.username}
+              size={20}
+              showBorder={false}
+              className="rounded-md"
+            />
+          )}
+          <span className="hidden sm:inline font-mono text-[11px] max-w-[90px] truncate text-theme-sub group-hover:text-white transition-colors">
+            @{profile.username}
+          </span>
         </button>
 
         {/* History / Stats Modal Trigger */}

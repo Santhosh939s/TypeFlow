@@ -114,3 +114,13 @@ export interface ThemeConfig {
     caret: string;
   };
 }
+
+export interface UserProfile {
+  username: string;
+  title?: string;
+  bio?: string;
+  customAvatar?: string | null; // Base64 image data URL
+  avatarSeed: string; // Deterministic seed for GitHub-style identicon
+  joinedDate: string;
+}
+

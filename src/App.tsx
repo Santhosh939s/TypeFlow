@@ -8,6 +8,7 @@ import { HistoryModal } from './components/HistoryModal';
 import { ShortcutsBar } from './components/ShortcutsBar';
 import { InteractiveLearningCard } from './components/InteractiveLearningCard';
 import { InteractiveDsaCard } from './components/InteractiveDsaCard';
+import { ProfileModal } from './components/ProfileModal';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useTypingEngine } from './hooks/useTypingEngine';
 import { useSoundEffects } from './hooks/useSoundEffects';
@@ -26,6 +27,9 @@ export function App() {
     setSettings,
     history,
     personalBests,
+    profile,
+    updateProfile,
+    resetProfile,
     saveTestResult,
     clearHistory,
   } = useLocalStorage();
@@ -36,6 +40,7 @@ export function App() {
 
   const [completedResult, setCompletedResult] = useState<TestResult | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Mechanical switch audio effects hook
   const { playKeySound, playErrorSound, playSuccessSound } = useSoundEffects(settings.soundEnabled);
@@ -137,6 +142,10 @@ export function App() {
 
       // Escape key closes modals
       if (e.key === 'Escape') {
+        if (isProfileOpen) {
+          setIsProfileOpen(false);
+          return;
+        }
         if (isHistoryOpen) {
           setIsHistoryOpen(false);
           return;
@@ -151,7 +160,7 @@ export function App() {
 
     window.addEventListener('keydown', handleGlobalShortcuts);
     return () => window.removeEventListener('keydown', handleGlobalShortcuts);
-  }, [initializeNewTest, isHistoryOpen, completedResult]);
+  }, [initializeNewTest, isProfileOpen, isHistoryOpen, completedResult]);
 
   return (
     <div className="min-h-[100dvh] flex flex-col justify-between transition-colors duration-300">
@@ -162,6 +171,8 @@ export function App() {
         soundEnabled={settings.soundEnabled}
         onToggleSound={handleToggleSound}
         onOpenHistory={() => setIsHistoryOpen(true)}
+        profile={profile}
+        onOpenProfile={() => setIsProfileOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -228,6 +239,17 @@ export function App() {
           </div>
         )}
       </main>
+
+      {/* Profile & Account Modal */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        profile={profile}
+        onUpdateProfile={updateProfile}
+        onResetProfile={resetProfile}
+        history={history}
+        personalBests={personalBests}
+      />
 
       {/* Persistent History & Personal Best Modal */}
       <HistoryModal
