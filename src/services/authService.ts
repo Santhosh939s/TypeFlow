@@ -52,6 +52,7 @@ export const authService = {
     const newProfile: UserProfile = {
       email: cleanEmail,
       username: cleanUsername,
+      display_name: cleanUsername,
       title: 'Keyboard Speedster',
       bio: 'Typing at the speed of thought with TypeFlow.',
       customAvatar: customAvatar || null,
@@ -86,6 +87,7 @@ export const authService = {
           options: {
             data: {
               username: cleanUsername,
+              display_name: cleanUsername,
               avatar_seed: seed,
               custom_avatar: customAvatar || null,
             },
@@ -112,6 +114,7 @@ export const authService = {
               id: data.user.id,
               email: cleanEmail,
               username: cleanUsername,
+              display_name: cleanUsername,
               avatar_seed: seed,
               custom_avatar: customAvatar || null,
               joined_date: newProfile.joinedDate,
@@ -161,6 +164,7 @@ export const authService = {
             id: data.user.id,
             email: cleanEmail,
             username: profileRow?.username || data.user.user_metadata?.username || cleanEmail.split('@')[0],
+            display_name: profileRow?.display_name || data.user.user_metadata?.display_name || cleanEmail.split('@')[0],
             title: profileRow?.title || 'Keyboard Speedster',
             bio: profileRow?.bio || '',
             customAvatar: profileRow?.custom_avatar || data.user.user_metadata?.custom_avatar || null,
@@ -190,14 +194,13 @@ export const authService = {
     }
 
     if (supabaseErr) {
-      // If supabase error is rate limit or unconfirmed email, provide clear guidance
       if (supabaseErr.message.toLowerCase().includes('rate limit')) {
         throw new Error('Cloud email rate limit reached. If you just created an account, try signing in again.');
       }
       throw new Error(supabaseErr.message);
     }
 
-    throw new Error('Invalid email or password. Please check your credentials.');
+    throw new Error('Invalid email or password. Please try again.');
   },
 
   async signOut(): Promise<void> {
@@ -209,6 +212,63 @@ export const authService = {
       }
     }
     localStorage.removeItem(LOCAL_AUTH_KEY);
+  },
+
+  async resetPassword(email: string) {
+    if (!isSupabaseConfigured() || !supabase) {
+      throw new Error('Supabase is not configured. Please add your credentials in .env');
+    }
+
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: window.location.origin,
+    });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getSession() {
+    if (!isSupabaseConfigured() || !supabase) return null;
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.warn('[authService] getSession error:', error);
+      return null;
+    }
+    return data.session;
+  },
+
+  async getUserProfile(userId: string): Promise<UserProfile | null> {
+    if (!isSupabaseConfigured() || !supabase) return null;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('[authService] getUserProfile error:', error);
+      return null;
+    }
+
+    return data as UserProfile | null;
+  },
+
+  async updateUserProfile(userId: string, updates: Partial<UserProfile>) {
+    if (!isSupabaseConfigured() || !supabase) return null;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as UserProfile;
   },
 
   getInitialUser(): UserProfile | null {

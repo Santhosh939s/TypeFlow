@@ -27,7 +27,7 @@ import { authService } from '../services/authService';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (profile: UserProfile) => void;
+  onSuccess?: (profile: UserProfile) => void;
   initialMode?: AuthMode;
 }
 
@@ -149,14 +149,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         );
         setSuccessMsg('Account created successfully! Welcome to TypeFlow.');
         setTimeout(() => {
-          onSuccess(profile);
+          onSuccess?.(profile);
           onClose();
         }, 800);
       } else {
         const profile = await authService.signIn(email, password);
         setSuccessMsg(`Welcome back, ${profile.username}!`);
         setTimeout(() => {
-          onSuccess(profile);
+          onSuccess?.(profile);
           onClose();
         }, 700);
       }

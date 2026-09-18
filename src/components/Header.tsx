@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, VolumeX, History, Palette, Sparkles, Maximize2, Minimize2, LogIn } from 'lucide-react';
+import { Volume2, VolumeX, History, Palette, Sparkles, Maximize2, Minimize2, Trophy, LogIn } from 'lucide-react';
 import { THEMES } from '../constants/themes';
 import { ThemeConfig, UserProfile } from '../types';
 import { Identicon } from './Identicon';
@@ -10,6 +10,7 @@ interface HeaderProps {
   soundEnabled: boolean;
   onToggleSound: () => void;
   onOpenHistory: () => void;
+  onOpenLeaderboard: () => void;
   profile: UserProfile | null;
   onOpenProfile: () => void;
   onOpenAuth: () => void;
@@ -21,6 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
   soundEnabled,
   onToggleSound,
   onOpenHistory,
+  onOpenLeaderboard,
   profile,
   onOpenProfile,
   onOpenAuth,
@@ -57,7 +59,7 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const currentTheme = THEMES.find(t => t.id === currentThemeId) || THEMES[0];
+  const currentTheme = THEMES.find((t) => t.id === currentThemeId) || THEMES[0];
 
   return (
     <header className="w-full max-w-5xl mx-auto pt-4 sm:pt-6 pb-4 px-3 sm:px-4 flex items-center justify-between border-b border-white/5">
@@ -74,10 +76,10 @@ export const Header: React.FC<HeaderProps> = ({
               Type<span className="text-theme-main">Flow</span>
             </h1>
             <span className="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-white/5 text-theme-sub border border-white/10 hidden xs:inline-block">
-              v1.1
+              v1.2
             </span>
           </div>
-          <p className="text-xs text-theme-sub hidden md:block">Minimalist & Precision Typing Engine</p>
+          <p className="text-xs text-theme-sub hidden md:block">Precision Typing Engine &bull; Cloud Synced</p>
         </div>
       </div>
 
@@ -86,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Fullscreen Toggle */}
         <button
           onClick={toggleFullscreen}
-          title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
           className="p-2 rounded-lg text-xs font-medium text-theme-sub hover:text-white bg-white/5 border border-white/5 hover:border-white/20 transition-all hidden sm:flex items-center justify-center"
         >
           {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
@@ -95,7 +97,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Sound Toggle */}
         <button
           onClick={onToggleSound}
-          title={soundEnabled ? "Mute Mechanical Audio" : "Enable Mechanical Audio"}
+          title={soundEnabled ? 'Mute Mechanical Audio' : 'Enable Mechanical Audio'}
           className={`p-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all duration-200 border ${
             soundEnabled
               ? 'bg-white/5 text-theme-main border-theme-main/30 hover:bg-theme-main/10'
@@ -103,7 +105,17 @@ export const Header: React.FC<HeaderProps> = ({
           }`}
         >
           {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          <span className="hidden md:inline">{soundEnabled ? 'Sound On' : 'Sound Off'}</span>
+          <span className="hidden lg:inline">{soundEnabled ? 'Sound On' : 'Sound Off'}</span>
+        </button>
+
+        {/* Community Leaderboard Trigger */}
+        <button
+          onClick={onOpenLeaderboard}
+          title="View Community Leaderboards"
+          className="p-2 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-white/5 text-theme-sub border border-white/10 hover:border-white/20 hover:text-white transition-all"
+        >
+          <Trophy size={16} className="text-amber-400" />
+          <span className="hidden md:inline">Leaderboard</span>
         </button>
 
         {/* Profile / Account Trigger or Sign In Button */}

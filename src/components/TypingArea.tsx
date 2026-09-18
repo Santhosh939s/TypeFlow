@@ -52,7 +52,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
   }, []);
 
-  // Always keep focus on input unless disabled or user intentionally focuses elsewhere
+  // Always keep focus on input unless disabled or intentionally focused elsewhere
   useEffect(() => {
     if (!disabled) {
       inputRef.current?.focus();
@@ -66,20 +66,39 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     }
   };
 
-  // Re-focus on any keypress if window receives input (never steal from inputs/modals)
+  // Re-focus on keypress ONLY if not disabled and not typing into another input/modal
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (disabled) return;
+
+      const target = e.target as HTMLElement | null;
       const activeEl = document.activeElement;
-      const isTypingInField =
-        activeEl &&
-        (activeEl.tagName === 'INPUT' ||
-          activeEl.tagName === 'TEXTAREA' ||
-          (activeEl as HTMLElement).isContentEditable);
 
-      if (isTypingInField) return;
+      // Never steal focus if target or active element is another input, textarea, or contentEditable
+      if (
+        (target &&
+          (target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.tagName === 'SELECT' ||
+            target.isContentEditable)) ||
+        (activeEl &&
+          (activeEl.tagName === 'INPUT' ||
+            activeEl.tagName === 'TEXTAREA' ||
+            activeEl.tagName === 'SELECT' ||
+            (activeEl as HTMLElement).isContentEditable))
+      ) {
+        if (target !== inputRef.current && activeEl !== inputRef.current) return;
+      }
 
-      if (activeEl !== inputRef.current && !['Tab', 'F5', 'F12', 'Escape'].includes(e.key)) {
+      // Never steal focus if an overlay or modal is active
+      if (target?.closest('.fixed, [role="dialog"], [aria-modal="true"]')) {
+        return;
+      }
+
+      if (
+        document.activeElement !== inputRef.current &&
+        !['Tab', 'F5', 'F12', 'Escape', 'Alt', 'Control', 'Meta'].includes(e.key)
+      ) {
         inputRef.current?.focus();
         setIsFocused(true);
       }
@@ -144,7 +163,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
         onKeyDown={(e) => !disabled && onKeyDown(e)}
         onFocus={() => !disabled && setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className="absolute inset-0 opacity-0 cursor-default z-10 w-full h-full"
+        className="absolute inset-0 opacity-0 cursor-default z-10 w-full h-full disabled:pointer-events-none"
         autoComplete="off"
         autoCapitalize="off"
         autoCorrect="off"

@@ -1,5 +1,6 @@
 export type TestMode = 'time' | 'words' | 'learn' | 'dsa' | 'code' | 'quotes';
 
+
 export type TimeDuration = 15 | 30 | 60 | 120;
 export type WordCountOption = 10 | 25 | 50 | 100;
 export type CodeLanguage = 'javascript' | 'python' | 'typescript' | 'html_css';
@@ -119,13 +120,35 @@ export interface UserProfile {
   id?: string;
   email?: string;
   username: string;
+  display_name?: string;
   title?: string;
   bio?: string;
   customAvatar?: string | null; // Base64 image data URL or URL
-  avatarSeed: string; // Deterministic seed for GitHub-style identicon
-  joinedDate: string;
+  avatar_url?: string;
+  avatarSeed?: string; // Deterministic seed for GitHub-style identicon
+  joinedDate?: string;
+  theme_id?: string;
+  sound_enabled?: boolean;
+  created_at?: string;
 }
 
 export type AuthMode = 'signin' | 'signup';
+export type AuthModalMode = 'signin' | 'signup' | 'reset';
+
+export interface LeaderboardEntry {
+  test_id: string;
+  user_id: string;
+  username: string;
+  display_name?: string;
+  avatar_url?: string;
+  mode: TestMode;
+  mode_config: string;
+  wpm: number;
+  raw_wpm: number;
+  accuracy: number;
+  consistency: number;
+  elapsed_seconds: number;
+  created_at: string;
+}
 
 

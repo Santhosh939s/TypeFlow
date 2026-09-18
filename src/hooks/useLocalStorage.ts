@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { TestResult, TestSettings, UserProfile } from '../types';
 import { authService } from '../services/authService';
+import { dbService } from '../services/dbService';
+import { isSupabaseConfigured } from '../lib/supabaseClient';
 
 const DEFAULT_SETTINGS: TestSettings = {
   mode: 'time',
@@ -18,6 +20,9 @@ const DEFAULT_SETTINGS: TestSettings = {
 };
 
 export function useLocalStorage() {
+  const isConfigured = isSupabaseConfigured();
+  const initialFetchDone = useRef<string | null>(null);
+
   const [settings, setSettings] = useState<TestSettings>(() => {
     try {
       const saved = localStorage.getItem('typeflow_settings');
@@ -45,10 +50,13 @@ export function useLocalStorage() {
     }
   });
 
+  const [isLoadingCloud, setIsLoadingCloud] = useState<boolean>(false);
+
   const [profile, setProfile] = useState<UserProfile | null>(() => {
     return authService.getInitialUser();
   });
 
+  // Settings persistence
   useEffect(() => {
     try {
       localStorage.setItem('typeflow_settings', JSON.stringify(settings));
@@ -56,6 +64,33 @@ export function useLocalStorage() {
       console.error('Failed to save settings:', e);
     }
   }, [settings]);
+
+  // Load cloud history & personal bests directly from Supabase when user has id
+  useEffect(() => {
+    if (!profile?.id || !isConfigured) {
+      initialFetchDone.current = null;
+      return;
+    }
+
+    if (initialFetchDone.current === profile.id) return;
+    initialFetchDone.current = profile.id;
+
+    const loadCloudData = async () => {
+      setIsLoadingCloud(true);
+      try {
+        const cloudHistory = await dbService.fetchUserHistory(profile.id!, 100);
+        const cloudPBs = await dbService.fetchPersonalBests(profile.id!);
+        if (cloudHistory.length > 0) setHistory(cloudHistory);
+        if (Object.keys(cloudPBs).length > 0) setPersonalBests(cloudPBs);
+      } catch (err) {
+        console.warn('[useLocalStorage] Cloud fetch error:', err);
+      } finally {
+        setIsLoadingCloud(false);
+      }
+    };
+
+    loadCloudData();
+  }, [profile?.id, isConfigured]);
 
   const updateProfile = (updates: Partial<UserProfile>) => {
     setProfile((prev) => {
@@ -76,47 +111,73 @@ export function useLocalStorage() {
     await authService.signOut();
   };
 
-  const saveTestResult = (result: TestResult): { isPB: boolean; previousPB: number } => {
-    const key = `${result.mode}-${result.modeConfig}`;
-    const prevPB = personalBests[key] || 0;
-    const isPB = result.wpm > prevPB;
+  const saveTestResult = useCallback(
+    (result: TestResult): { isPB: boolean; previousPB: number } => {
+      const key = `${result.mode}-${result.modeConfig}`;
+      const prevPB = personalBests[key] || 0;
+      const isPB = result.wpm > prevPB;
 
-    const newResult = {
-      ...result,
-      isPersonalBest: isPB,
-    };
+      const newResult: TestResult = {
+        ...result,
+        isPersonalBest: isPB,
+      };
 
-    const newHistory = [newResult, ...history].slice(0, 50); // keep last 50
-    setHistory(newHistory);
-    try {
-      localStorage.setItem('typeflow_history', JSON.stringify(newHistory));
-    } catch (e) {
-      console.error('Failed to save history:', e);
-    }
+      // Optimistically update live session state
+      setHistory((prev) => {
+        const next = [newResult, ...prev].slice(0, 100);
+        try {
+          localStorage.setItem('typeflow_history', JSON.stringify(next));
+        } catch {}
+        return next;
+      });
 
-    if (isPB) {
-      const newPBs = { ...personalBests, [key]: result.wpm };
-      setPersonalBests(newPBs);
-      try {
-        localStorage.setItem('typeflow_pbs', JSON.stringify(newPBs));
-      } catch (e) {
-        console.error('Failed to save PB:', e);
+      if (isPB) {
+        setPersonalBests((prev) => {
+          const next = { ...prev, [key]: result.wpm };
+          try {
+            localStorage.setItem('typeflow_pbs', JSON.stringify(next));
+          } catch {}
+          return next;
+        });
       }
-    }
 
-    return { isPB, previousPB: prevPB };
-  };
+      // Save directly to Supabase cloud database if user has an id
+      if (profile?.id && isConfigured) {
+        dbService
+          .saveTestResult(profile.id, newResult)
+          .then((cloudId) => {
+            if (cloudId) {
+              setHistory((current) =>
+                current.map((item) => (item.id === newResult.id ? { ...item, id: cloudId } : item))
+              );
+            }
+          })
+          .catch((err) => {
+            console.error('[useLocalStorage] Failed to save test to Supabase:', err);
+          });
+      }
 
-  const clearHistory = () => {
+      return { isPB, previousPB: prevPB };
+    },
+    [personalBests, profile?.id, isConfigured]
+  );
+
+  const clearHistory = useCallback(async () => {
     setHistory([]);
     setPersonalBests({});
     try {
       localStorage.removeItem('typeflow_history');
       localStorage.removeItem('typeflow_pbs');
-    } catch (e) {
-      console.error('Failed to clear history:', e);
+    } catch {}
+
+    if (profile?.id && isConfigured) {
+      try {
+        await dbService.clearUserHistory(profile.id);
+      } catch (e) {
+        console.warn('Failed to clear cloud history:', e);
+      }
     }
-  };
+  }, [profile?.id, isConfigured]);
 
   return {
     settings,
@@ -129,6 +190,6 @@ export function useLocalStorage() {
     logoutUser,
     saveTestResult,
     clearHistory,
+    isLoadingCloud,
   };
 }
-

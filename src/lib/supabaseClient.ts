@@ -31,7 +31,7 @@ if (isSupabaseConfigured() && supabaseUrl && supabaseAnonKey) {
   }
 } else {
   console.info(
-    '[TypeFlow] Supabase credentials not found. Running with local account authentication.'
+    '[TypeFlow] Supabase credentials not found in .env. Running in Offline/Guest mode. See .env.example to enable Cloud Auth & Database.'
   );
 }
 

@@ -49,8 +49,22 @@
 - **Theme Customizer**:
   - 6 curated themes: Cyber Emerald, Tokyo Night, Amber Horizon, Matrix Code, Nordic Frost, and Dracula.
 
-- **100% Offline & Private**:
-  - Powered by `localStorage` — no login, no accounts, and no data leaves your device.
+- **100% Online Cloud Platform**:
+  - Direct real-time cloud persistence powered by **Supabase PostgreSQL**.
+  - All typing sessions, telemetry, and personal records save directly to your cloud account.
+
+- **Cloud Authentication & User Profiles**:
+  - Secure account creation and sign-in powered by **Supabase Auth** (JWT-based session management).
+  - Custom user profiles with unique usernames, avatars, and persistent cross-device settings.
+  - User profile menu with instant sign-out and live cloud status badges.
+
+- **PostgreSQL Telemetry Storage**:
+  - Every completed typing test records comprehensive velocity metrics and second-by-second pacing data stored in `JSONB`.
+  - Protected with PostgreSQL **Row Level Security (RLS)** ensuring complete data privacy.
+
+- **Global Community Leaderboards**:
+  - Live competitive leaderboard displaying top WPM scores, accuracy, and consistency across time and word modes.
+  - Compete against typists worldwide and track your global ranking.
 
 ---
 
@@ -60,6 +74,7 @@
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS & CSS Custom Properties
 - **Build Tool**: Vite
+- **Database & Auth**: Supabase (PostgreSQL, Row Level Security, Auth)
 - **Icons**: Lucide React
 - **Sound**: Web Audio API (native synthetic oscillator)
 
@@ -86,6 +101,16 @@ npm install
 npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Database & Cloud Setup (Optional)
+TypeFlow runs 100% offline out of the box using `localStorage`. To enable cross-device cloud sync and the community leaderboard:
+1. Create a free project at [supabase.com](https://supabase.com).
+2. Run the SQL script found in [`supabase/schema.sql`](./supabase/schema.sql) in your Supabase SQL Editor.
+3. Copy your project URL and anon public API key into `.env`:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+   ```
 
 ### Production Build
 ```bash
