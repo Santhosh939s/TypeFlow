@@ -13,6 +13,7 @@ import {
   Award,
   ShieldCheck,
   User,
+  LogOut,
 } from 'lucide-react';
 import { UserProfile, TestResult } from '../types';
 import { Identicon } from './Identicon';
@@ -25,9 +26,9 @@ import {
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  profile: UserProfile;
+  profile: UserProfile | null;
   onUpdateProfile: (updates: Partial<UserProfile>) => void;
-  onResetProfile: () => void;
+  onSignOut: () => void;
   history: TestResult[];
   personalBests: Record<string, number>;
 }
@@ -37,22 +38,22 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onClose,
   profile,
   onUpdateProfile,
-  onResetProfile,
+  onSignOut,
   history,
   personalBests,
 }) => {
-  const [username, setUsername] = useState(profile.username);
-  const [title, setTitle] = useState(profile.title || '');
-  const [bio, setBio] = useState(profile.bio || '');
-  const [customAvatar, setCustomAvatar] = useState<string | null>(profile.customAvatar || null);
-  const [avatarSeed, setAvatarSeed] = useState(profile.avatarSeed || profile.username);
-  const [suggestions, setSuggestions] = useState<string[]>(() => getNameSuggestions(4, profile.username));
+  const [username, setUsername] = useState(profile?.username || '');
+  const [title, setTitle] = useState(profile?.title || '');
+  const [bio, setBio] = useState(profile?.bio || '');
+  const [customAvatar, setCustomAvatar] = useState<string | null>(profile?.customAvatar || null);
+  const [avatarSeed, setAvatarSeed] = useState(profile?.avatarSeed || profile?.username || 'Typist');
+  const [suggestions, setSuggestions] = useState<string[]>(() => getNameSuggestions(4, profile?.username || ''));
   const [savedSuccess, setSavedSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync state whenever profile opens or changes
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && profile) {
       setUsername(profile.username);
       setTitle(profile.title || '');
       setBio(profile.bio || '');
@@ -62,8 +63,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setSavedSuccess(false);
     }
   }, [isOpen, profile]);
-
-  if (!isOpen) return null;
+  if (!isOpen || !profile) return null;
 
   // Compute player stats
   const totalTests = history.length;
@@ -495,10 +495,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         <div className="flex items-center justify-between border-t border-white/10 pt-4">
           <button
             type="button"
-            onClick={onResetProfile}
-            className="text-xs text-theme-sub hover:text-red-400 transition-colors"
+            onClick={() => {
+              onSignOut();
+              onClose();
+            }}
+            className="text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 border border-rose-500/20"
           >
-            Reset Profile
+            <LogOut size={13} />
+            <span>Sign Out</span>
           </button>
 
           <div className="flex items-center gap-2.5">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { TestResult, TestSettings, UserProfile } from '../types';
-import { generateRandomUsername } from '../utils/nameGenerator';
+import { authService } from '../services/authService';
 
 const DEFAULT_SETTINGS: TestSettings = {
   mode: 'time',
@@ -15,18 +15,6 @@ const DEFAULT_SETTINGS: TestSettings = {
   includeNumbers: false,
   soundEnabled: true,
   themeId: 'cyber-emerald',
-};
-
-const createDefaultProfile = (): UserProfile => {
-  const name = generateRandomUsername();
-  return {
-    username: name,
-    title: 'Keyboard Speedster',
-    bio: 'Typing at the speed of thought with TypeFlow.',
-    customAvatar: null,
-    avatarSeed: name,
-    joinedDate: new Date().toISOString().split('T')[0],
-  };
 };
 
 export function useLocalStorage() {
@@ -57,18 +45,8 @@ export function useLocalStorage() {
     }
   });
 
-  const [profile, setProfile] = useState<UserProfile>(() => {
-    try {
-      const saved = localStorage.getItem('typeflow_profile');
-      if (saved) {
-        return JSON.parse(saved);
-      }
-      const initial = createDefaultProfile();
-      localStorage.setItem('typeflow_profile', JSON.stringify(initial));
-      return initial;
-    } catch {
-      return createDefaultProfile();
-    }
+  const [profile, setProfile] = useState<UserProfile | null>(() => {
+    return authService.getInitialUser();
   });
 
   useEffect(() => {
@@ -81,24 +59,21 @@ export function useLocalStorage() {
 
   const updateProfile = (updates: Partial<UserProfile>) => {
     setProfile((prev) => {
+      if (!prev) return null;
       const updated = { ...prev, ...updates };
-      try {
-        localStorage.setItem('typeflow_profile', JSON.stringify(updated));
-      } catch (e) {
-        console.error('Failed to save profile:', e);
-      }
+      authService.saveUser(updated);
       return updated;
     });
   };
 
-  const resetProfile = () => {
-    const fresh = createDefaultProfile();
-    setProfile(fresh);
-    try {
-      localStorage.setItem('typeflow_profile', JSON.stringify(fresh));
-    } catch (e) {
-      console.error('Failed to reset profile:', e);
-    }
+  const loginUser = (newProfile: UserProfile) => {
+    setProfile(newProfile);
+    authService.saveUser(newProfile);
+  };
+
+  const logoutUser = async () => {
+    setProfile(null);
+    await authService.signOut();
   };
 
   const saveTestResult = (result: TestResult): { isPB: boolean; previousPB: number } => {
@@ -150,7 +125,8 @@ export function useLocalStorage() {
     personalBests,
     profile,
     updateProfile,
-    resetProfile,
+    loginUser,
+    logoutUser,
     saveTestResult,
     clearHistory,
   };

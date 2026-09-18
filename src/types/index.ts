@@ -116,11 +116,16 @@ export interface ThemeConfig {
 }
 
 export interface UserProfile {
+  id?: string;
+  email?: string;
   username: string;
   title?: string;
   bio?: string;
-  customAvatar?: string | null; // Base64 image data URL
+  customAvatar?: string | null; // Base64 image data URL or URL
   avatarSeed: string; // Deterministic seed for GitHub-style identicon
   joinedDate: string;
 }
+
+export type AuthMode = 'signin' | 'signup';
+
 

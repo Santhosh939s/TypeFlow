@@ -9,6 +9,7 @@ import { ShortcutsBar } from './components/ShortcutsBar';
 import { InteractiveLearningCard } from './components/InteractiveLearningCard';
 import { InteractiveDsaCard } from './components/InteractiveDsaCard';
 import { ProfileModal } from './components/ProfileModal';
+import { AuthModal } from './components/AuthModal';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useTypingEngine } from './hooks/useTypingEngine';
 import { useSoundEffects } from './hooks/useSoundEffects';
@@ -29,7 +30,8 @@ export function App() {
     personalBests,
     profile,
     updateProfile,
-    resetProfile,
+    loginUser,
+    logoutUser,
     saveTestResult,
     clearHistory,
   } = useLocalStorage();
@@ -41,6 +43,7 @@ export function App() {
   const [completedResult, setCompletedResult] = useState<TestResult | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   // Mechanical switch audio effects hook
   const { playKeySound, playErrorSound, playSuccessSound } = useSoundEffects(settings.soundEnabled);
@@ -142,6 +145,10 @@ export function App() {
 
       // Escape key closes modals
       if (e.key === 'Escape') {
+        if (isAuthOpen) {
+          setIsAuthOpen(false);
+          return;
+        }
         if (isProfileOpen) {
           setIsProfileOpen(false);
           return;
@@ -160,7 +167,7 @@ export function App() {
 
     window.addEventListener('keydown', handleGlobalShortcuts);
     return () => window.removeEventListener('keydown', handleGlobalShortcuts);
-  }, [initializeNewTest, isProfileOpen, isHistoryOpen, completedResult]);
+  }, [initializeNewTest, isAuthOpen, isProfileOpen, isHistoryOpen, completedResult]);
 
   return (
     <div className="min-h-[100dvh] flex flex-col justify-between transition-colors duration-300">
@@ -173,6 +180,7 @@ export function App() {
         onOpenHistory={() => setIsHistoryOpen(true)}
         profile={profile}
         onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -240,13 +248,23 @@ export function App() {
         )}
       </main>
 
+      {/* Auth Modal (Sign In / Sign Up) */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onSuccess={(user) => {
+          loginUser(user);
+          setIsAuthOpen(false);
+        }}
+      />
+
       {/* Profile & Account Modal */}
       <ProfileModal
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
         profile={profile}
         onUpdateProfile={updateProfile}
-        onResetProfile={resetProfile}
+        onSignOut={logoutUser}
         history={history}
         personalBests={personalBests}
       />
