@@ -13,6 +13,7 @@ interface TypingAreaProps {
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onMobileInput: (value: string) => void;
   status: 'idle' | 'running' | 'completed';
+  disabled?: boolean;
 }
 
 export const TypingArea: React.FC<TypingAreaProps> = ({
@@ -25,6 +26,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
   onKeyDown,
   onMobileInput,
   status,
+  disabled = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -50,27 +52,41 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
   }, []);
 
-  // Always keep focus on input unless user intentionally focuses elsewhere
+  // Always keep focus on input unless disabled or user intentionally focuses elsewhere
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    if (!disabled) {
+      inputRef.current?.focus();
+    }
+  }, [disabled]);
 
   const handleContainerClick = () => {
-    inputRef.current?.focus();
-    setIsFocused(true);
+    if (!disabled) {
+      inputRef.current?.focus();
+      setIsFocused(true);
+    }
   };
 
-  // Re-focus on any keypress if window receives input
+  // Re-focus on any keypress if window receives input (never steal from inputs/modals)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (document.activeElement !== inputRef.current && !['Tab', 'F5', 'F12'].includes(e.key)) {
+      if (disabled) return;
+      const activeEl = document.activeElement;
+      const isTypingInField =
+        activeEl &&
+        (activeEl.tagName === 'INPUT' ||
+          activeEl.tagName === 'TEXTAREA' ||
+          (activeEl as HTMLElement).isContentEditable);
+
+      if (isTypingInField) return;
+
+      if (activeEl !== inputRef.current && !['Tab', 'F5', 'F12', 'Escape'].includes(e.key)) {
         inputRef.current?.focus();
         setIsFocused(true);
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, []);
+  }, [disabled]);
 
   // Calculate smooth floating caret position
   useLayoutEffect(() => {
@@ -122,10 +138,11 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
       <input
         ref={inputRef}
         type="text"
+        disabled={disabled}
         value={currentInput}
-        onChange={(e) => onMobileInput(e.target.value)}
-        onKeyDown={onKeyDown}
-        onFocus={() => setIsFocused(true)}
+        onChange={(e) => !disabled && onMobileInput(e.target.value)}
+        onKeyDown={(e) => !disabled && onKeyDown(e)}
+        onFocus={() => !disabled && setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         className="absolute inset-0 opacity-0 cursor-default z-10 w-full h-full"
         autoComplete="off"
@@ -135,8 +152,8 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
         aria-label="Typing input box"
       />
 
-      {/* Focus Lost Overlay */}
-      {!isFocused && status !== 'completed' && (
+      {/* Focus Lost Overlay (hidden when modal is open) */}
+      {!disabled && !isFocused && status !== 'completed' && (
         <div className="absolute inset-0 bg-[#0c0f14]/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center text-slate-300 animate-in fade-in duration-200 pointer-events-none">
           {isTouchDevice ? (
             <Smartphone size={28} className="text-theme-main animate-bounce mb-2" />

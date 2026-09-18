@@ -135,8 +135,11 @@ export function App() {
   // Keyboard shortcut listener: Tab to restart, Esc to clear modal
   useEffect(() => {
     const handleGlobalShortcuts = (e: KeyboardEvent) => {
-      // Tab key restarts test
+      const isModalActive = isAuthOpen || isProfileOpen || isHistoryOpen || !!completedResult;
+
+      // Tab key restarts test ONLY when no modals are open
       if (e.key === 'Tab') {
+        if (isModalActive) return; // Allow normal form focus tabbing!
         e.preventDefault();
         setCompletedResult(null);
         initializeNewTest();
@@ -240,6 +243,7 @@ export function App() {
               onKeyDown={handleKeyDown}
               onMobileInput={handleMobileInput}
               status={status}
+              disabled={isAuthOpen || isProfileOpen || isHistoryOpen || !!completedResult}
             />
 
             {/* Bottom Shortcuts reference */}

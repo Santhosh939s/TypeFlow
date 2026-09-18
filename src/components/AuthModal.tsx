@@ -333,6 +333,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     maxLength={20}
                     placeholder="e.g. CyberTypist"
+                    autoFocus={mode === 'signup'}
                     value={username}
                     onChange={(e) => {
                       setUsername(e.target.value);
@@ -383,6 +384,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 type="email"
                 required
                 placeholder="you@example.com"
+                autoFocus={mode === 'signin'}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-theme-main transition-colors"
