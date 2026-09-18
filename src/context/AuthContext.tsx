@@ -111,9 +111,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const res = await authService.signIn(email, password);
-      if (res.user) {
-        setUser(res.user);
-        await loadUserProfile(res.user.id, res.user);
+      if (res) {
+        setProfile(res);
+        if (supabase) {
+          const { data } = await supabase.auth.getUser();
+          if (data?.user) setUser(data.user);
+        }
         setAuthModalOpen(false);
       }
     } finally {
@@ -125,9 +128,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const res = await authService.signUp(email, password, username);
-      if (res.user) {
-        setUser(res.user);
-        await loadUserProfile(res.user.id, res.user);
+      if (res) {
+        setProfile(res);
+        if (supabase) {
+          const { data } = await supabase.auth.getUser();
+          if (data?.user) setUser(data.user);
+        }
         setAuthModalOpen(false);
       }
     } finally {

@@ -10,6 +10,7 @@ import { AuthModal } from './components/AuthModal';
 import { ShortcutsBar } from './components/ShortcutsBar';
 import { InteractiveLearningCard } from './components/InteractiveLearningCard';
 import { InteractiveDsaCard } from './components/InteractiveDsaCard';
+import { ProfileModal } from './components/ProfileModal';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useTypingEngine } from './hooks/useTypingEngine';
 import { useSoundEffects } from './hooks/useSoundEffects';
@@ -24,13 +25,17 @@ import {
 } from './utils/textGenerator';
 
 export function App() {
-  const { user, isConfigured, authModalOpen, closeAuthModal } = useAuth();
+  const { user, isConfigured } = useAuth();
 
   const {
     settings,
     setSettings,
     history,
     personalBests,
+    profile,
+    updateProfile,
+    loginUser,
+    logoutUser,
     saveTestResult,
     clearHistory,
   } = useLocalStorage();
@@ -42,6 +47,10 @@ export function App() {
   const [completedResult, setCompletedResult] = useState<TestResult | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  const isAnyModalOpen = isAuthOpen || isProfileOpen || isHistoryOpen || isLeaderboardOpen || !!completedResult;
 
   // Mechanical switch audio effects hook
   const { playKeySound, playErrorSound, playSuccessSound } = useSoundEffects(settings.soundEnabled);
@@ -133,8 +142,6 @@ export function App() {
     initializeNewTest();
   };
 
-  const isAnyModalOpen = isHistoryOpen || isLeaderboardOpen || authModalOpen;
-
   // Keyboard shortcut listener: Tab to restart, Esc to clear modals
   useEffect(() => {
     const handleGlobalShortcuts = (e: KeyboardEvent) => {
@@ -146,8 +153,10 @@ export function App() {
 
       // If user is inside a form input, never intercept (except Escape to dismiss)
       if (isTypingInInput) {
-        if (e.key === 'Escape' && authModalOpen) {
-          closeAuthModal();
+        if (e.key === 'Escape') {
+          if (isAuthOpen) setIsAuthOpen(false);
+          if (isProfileOpen) setIsProfileOpen(false);
+          if (isLeaderboardOpen) setIsLeaderboardOpen(false);
         }
         return;
       }
@@ -165,8 +174,12 @@ export function App() {
 
       // Escape key closes modals
       if (e.key === 'Escape') {
-        if (authModalOpen) {
-          closeAuthModal();
+        if (isAuthOpen) {
+          setIsAuthOpen(false);
+          return;
+        }
+        if (isProfileOpen) {
+          setIsProfileOpen(false);
           return;
         }
         if (isLeaderboardOpen) {
@@ -187,7 +200,7 @@ export function App() {
 
     window.addEventListener('keydown', handleGlobalShortcuts);
     return () => window.removeEventListener('keydown', handleGlobalShortcuts);
-  }, [initializeNewTest, isAnyModalOpen, isHistoryOpen, isLeaderboardOpen, authModalOpen, completedResult, closeAuthModal]);
+  }, [initializeNewTest, isAnyModalOpen, isAuthOpen, isProfileOpen, isLeaderboardOpen, isHistoryOpen, completedResult]);
 
   return (
     <div className="min-h-[100dvh] flex flex-col justify-between transition-colors duration-300">
@@ -199,6 +212,9 @@ export function App() {
         onToggleSound={handleToggleSound}
         onOpenHistory={() => setIsHistoryOpen(true)}
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
+        profile={profile}
+        onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -267,6 +283,27 @@ export function App() {
         )}
       </main>
 
+      {/* Auth Modal (Sign In / Sign Up) */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onSuccess={(user) => {
+          loginUser(user);
+          setIsAuthOpen(false);
+        }}
+      />
+
+      {/* Profile & Account Modal */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        profile={profile}
+        onUpdateProfile={updateProfile}
+        onSignOut={logoutUser}
+        history={history}
+        personalBests={personalBests}
+      />
+
       {/* Persistent History & Analytics Modal */}
       <HistoryModal
         isOpen={isHistoryOpen}
@@ -281,9 +318,6 @@ export function App() {
         isOpen={isLeaderboardOpen}
         onClose={() => setIsLeaderboardOpen(false)}
       />
-
-      {/* Authentication & Profile Modal */}
-      <AuthModal />
 
       {/* Footer */}
       <footer className="w-full max-w-5xl mx-auto py-6 px-4 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs text-theme-sub gap-2">

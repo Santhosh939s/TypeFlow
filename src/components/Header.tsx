@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Volume2, VolumeX, History, Palette, Sparkles, Maximize2, Minimize2, Trophy, LogIn } from 'lucide-react';
 import { THEMES } from '../constants/themes';
-import { ThemeConfig } from '../types';
-import { useAuth } from '../context/AuthContext';
-import { UserProfileMenu } from './UserProfileMenu';
+import { ThemeConfig, UserProfile } from '../types';
+import { Identicon } from './Identicon';
 
 interface HeaderProps {
   currentThemeId: string;
@@ -12,6 +11,9 @@ interface HeaderProps {
   onToggleSound: () => void;
   onOpenHistory: () => void;
   onOpenLeaderboard: () => void;
+  profile: UserProfile | null;
+  onOpenProfile: () => void;
+  onOpenAuth: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -21,8 +23,10 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSound,
   onOpenHistory,
   onOpenLeaderboard,
+  profile,
+  onOpenProfile,
+  onOpenAuth,
 }) => {
-  const { user, openAuthModal } = useAuth();
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -114,6 +118,42 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="hidden md:inline">Leaderboard</span>
         </button>
 
+        {/* Profile / Account Trigger or Sign In Button */}
+        {profile ? (
+          <button
+            onClick={onOpenProfile}
+            title="Account Profile & Custom Avatar"
+            className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 bg-white/5 text-white border border-white/10 hover:border-theme-main/40 hover:bg-white/10 transition-all group"
+          >
+            {profile.customAvatar ? (
+              <img
+                src={profile.customAvatar}
+                alt={profile.username}
+                className="w-5 h-5 rounded-md object-cover ring-1 ring-white/20 group-hover:ring-theme-main/50 transition-all"
+              />
+            ) : (
+              <Identicon
+                seed={profile.avatarSeed || profile.username}
+                size={20}
+                showBorder={false}
+                className="rounded-md"
+              />
+            )}
+            <span className="hidden sm:inline font-mono text-[11px] max-w-[90px] truncate text-theme-sub group-hover:text-white transition-colors">
+              @{profile.username}
+            </span>
+          </button>
+        ) : (
+          <button
+            onClick={onOpenAuth}
+            title="Sign In or Create an Account"
+            className="px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-theme-main text-black hover:opacity-90 active:scale-[0.98] transition-all shadow-sm shadow-theme-main/20"
+          >
+            <LogIn size={14} />
+            <span>Sign In</span>
+          </button>
+        )}
+
         {/* History / Stats Modal Trigger */}
         <button
           onClick={onOpenHistory}
@@ -175,20 +215,6 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
         </div>
-
-        {/* Authentication / User Profile Section */}
-        {user ? (
-          <UserProfileMenu />
-        ) : (
-          <button
-            onClick={() => openAuthModal('signin')}
-            className="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold bg-theme-main text-black hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
-            title="Sign in to save records to cloud"
-          >
-            <LogIn size={15} />
-            <span className="hidden sm:inline">Sign In</span>
-          </button>
-        )}
       </div>
     </header>
   );

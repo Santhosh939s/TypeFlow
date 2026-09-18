@@ -72,16 +72,22 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
       if (disabled) return;
 
       const target = e.target as HTMLElement | null;
+      const activeEl = document.activeElement;
 
-      // Never steal focus if target is another input, textarea, or contentEditable
+      // Never steal focus if target or active element is another input, textarea, or contentEditable
       if (
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.tagName === 'SELECT' ||
-          target.isContentEditable)
+        (target &&
+          (target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.tagName === 'SELECT' ||
+            target.isContentEditable)) ||
+        (activeEl &&
+          (activeEl.tagName === 'INPUT' ||
+            activeEl.tagName === 'TEXTAREA' ||
+            activeEl.tagName === 'SELECT' ||
+            (activeEl as HTMLElement).isContentEditable))
       ) {
-        if (target !== inputRef.current) return;
+        if (target !== inputRef.current && activeEl !== inputRef.current) return;
       }
 
       // Never steal focus if an overlay or modal is active
@@ -165,8 +171,8 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
         aria-label="Typing input box"
       />
 
-      {/* Focus Lost Overlay */}
-      {!isFocused && status !== 'completed' && (
+      {/* Focus Lost Overlay (hidden when modal is open) */}
+      {!disabled && !isFocused && status !== 'completed' && (
         <div className="absolute inset-0 bg-[#0c0f14]/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center text-slate-300 animate-in fade-in duration-200 pointer-events-none">
           {isTouchDevice ? (
             <Smartphone size={28} className="text-theme-main animate-bounce mb-2" />

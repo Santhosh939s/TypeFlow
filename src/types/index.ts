@@ -117,15 +117,23 @@ export interface ThemeConfig {
 }
 
 export interface UserProfile {
-  id: string;
+  id?: string;
   email?: string;
   username: string;
   display_name?: string;
+  title?: string;
+  bio?: string;
+  customAvatar?: string | null; // Base64 image data URL or URL
   avatar_url?: string;
+  avatarSeed?: string; // Deterministic seed for GitHub-style identicon
+  joinedDate?: string;
   theme_id?: string;
   sound_enabled?: boolean;
   created_at?: string;
 }
+
+export type AuthMode = 'signin' | 'signup';
+export type AuthModalMode = 'signin' | 'signup' | 'reset';
 
 export interface LeaderboardEntry {
   test_id: string;
@@ -143,5 +151,4 @@ export interface LeaderboardEntry {
   created_at: string;
 }
 
-export type AuthModalMode = 'signin' | 'signup' | 'reset';
 
