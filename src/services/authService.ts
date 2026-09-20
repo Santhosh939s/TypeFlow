@@ -80,58 +80,42 @@ export const authService = {
 
     // Try Supabase Auth if configured
     if (isSupabaseConfigured() && supabase) {
-      try {
-        const { data, error } = await supabase.auth.signUp({
-          email: cleanEmail,
-          password,
-          options: {
-            data: {
-              username: cleanUsername,
-              display_name: cleanUsername,
-              avatar_seed: seed,
-              custom_avatar: customAvatar || null,
-            },
+      const { data, error } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+        options: {
+          data: {
+            username: cleanUsername,
+            display_name: cleanUsername,
+            avatar_seed: seed,
+            custom_avatar: customAvatar || null,
           },
-        });
+        },
+      });
 
-        if (error) {
-          console.warn('[Supabase Auth] SignUp notice:', error.message);
-          const isRateLimitOrNetwork =
-            error.message.toLowerCase().includes('rate limit') ||
-            error.message.toLowerCase().includes('rate_limit') ||
-            (error as any).status === 429;
-
-          if (!isRateLimitOrNetwork) {
-            // Re-throw if email syntax is explicitly invalid
-            if (error.message.toLowerCase().includes('invalid email')) {
-              throw new Error(error.message);
-            }
-          }
-        } else if (data.user) {
-          newProfile.id = data.user.id;
-          try {
-            await supabase.from('profiles').upsert({
-              id: data.user.id,
-              email: cleanEmail,
-              username: cleanUsername,
-              display_name: cleanUsername,
-              avatar_seed: seed,
-              custom_avatar: customAvatar || null,
-              joined_date: newProfile.joinedDate,
-            });
-          } catch {
-            // SQL trigger pending or ignored
-          }
+      if (error) {
+        console.error('[Supabase Auth] SignUp error:', error.message);
+        if (error.message.toLowerCase().includes('rate limit') || error.message.toLowerCase().includes('rate_limit')) {
+          throw new Error('Supabase email rate limit exceeded (free tier email limit reached). To enable unlimited instant signups without email limits, disable "Confirm email" in your Supabase Dashboard: Authentication -> Providers -> Email -> toggle off "Confirm email".');
         }
-      } catch (err: any) {
-        console.warn('Supabase signup handled gracefully:', err.message);
-        const isRateLimitOrNetwork =
-          err.message?.toLowerCase().includes('rate limit') ||
-          err.message?.toLowerCase().includes('rate_limit') ||
-          err.status === 429;
+        if (error.message.toLowerCase().includes('already registered')) {
+          throw new Error('This email is already registered. Please sign in instead.');
+        }
+        throw new Error(error.message);
+      }
 
-        if (!isRateLimitOrNetwork && err.message?.toLowerCase().includes('invalid email')) {
-          throw err;
+      if (data.user) {
+        newProfile.id = data.user.id;
+        try {
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            email: cleanEmail,
+            username: cleanUsername,
+            display_name: cleanUsername,
+            avatar_url: customAvatar || seed || '',
+          });
+        } catch (dbErr) {
+          console.warn('[Supabase Auth] Profile record sync note:', dbErr);
         }
       }
     }
@@ -167,9 +151,9 @@ export const authService = {
             display_name: profileRow?.display_name || data.user.user_metadata?.display_name || cleanEmail.split('@')[0],
             title: profileRow?.title || 'Keyboard Speedster',
             bio: profileRow?.bio || '',
-            customAvatar: profileRow?.custom_avatar || data.user.user_metadata?.custom_avatar || null,
-            avatarSeed: profileRow?.avatar_seed || data.user.user_metadata?.avatar_seed || cleanEmail,
-            joinedDate: profileRow?.joined_date || new Date().toISOString().split('T')[0],
+            customAvatar: profileRow?.avatar_url || data.user.user_metadata?.custom_avatar || null,
+            avatarSeed: profileRow?.avatar_url || data.user.user_metadata?.avatar_seed || cleanEmail,
+            joinedDate: profileRow?.created_at ? profileRow.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
           };
 
           localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(loadedProfile));
@@ -194,8 +178,15 @@ export const authService = {
     }
 
     if (supabaseErr) {
-      if (supabaseErr.message.toLowerCase().includes('rate limit')) {
-        throw new Error('Cloud email rate limit reached. If you just created an account, try signing in again.');
+      const msg = supabaseErr.message.toLowerCase();
+      if (msg.includes('email not confirmed')) {
+        throw new Error('Email not confirmed yet. Please check your inbox for the confirmation link, or disable "Confirm email" in Supabase Dashboard (Authentication -> Providers -> Email -> toggle off "Confirm email").');
+      }
+      if (msg.includes('invalid login credentials') || msg.includes('invalid_grant')) {
+        throw new Error('Invalid email or password. If you recently created an account, check if email confirmation was required.');
+      }
+      if (msg.includes('rate limit')) {
+        throw new Error('Cloud email rate limit reached. Please wait a few minutes before trying again.');
       }
       throw new Error(supabaseErr.message);
     }
