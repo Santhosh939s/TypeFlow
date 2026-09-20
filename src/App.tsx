@@ -256,7 +256,7 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl xl:max-w-7xl w-full mx-auto">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-8 lg:px-12 py-6 sm:py-8 w-full max-w-[1500px] mx-auto">
         {completedResult ? (
           /* Show Daily Challenge modal for daily mode, standard modal for everything else */
           completedResult.mode === 'daily' ? (
@@ -373,7 +373,7 @@ export function App() {
       />
 
       {/* Footer */}
-      <footer className="w-full max-w-6xl xl:max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs text-theme-sub gap-2">
+      <footer className="w-full max-w-[1500px] mx-auto py-6 px-4 sm:px-8 lg:px-12 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs text-theme-sub gap-2">
         <div className="flex items-center gap-2">
           <span
             className={`w-2 h-2 rounded-full ${
