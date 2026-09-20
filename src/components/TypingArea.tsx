@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useState, useLayoutEffect, useMemo } from 'react';
-import { MousePointerClick, Smartphone } from 'lucide-react';
 import { TestMode } from '../types';
 import { parseTextStructure } from '../utils/codeParser';
 
@@ -35,7 +34,6 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
   const activeCharRef = useRef<HTMLSpanElement>(null);
 
   const [isFocused, setIsFocused] = useState(true);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [caretPos, setCaretPos] = useState<{ left: number; top: number; height: number }>({
     left: 0,
     top: 0,
@@ -46,11 +44,6 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
   const { lines, isCodeMode } = useMemo(() => {
     return parseTextStructure(text, mode === 'code' || mode === 'dsa');
   }, [text, mode]);
-
-  // Detect touch device
-  useEffect(() => {
-    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
-  }, []);
 
   // Always keep focus on input unless disabled or intentionally focused elsewhere
   useEffect(() => {
@@ -92,6 +85,11 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
 
       // Never steal focus if an overlay or modal is active
       if (target?.closest('.fixed, [role="dialog"], [aria-modal="true"]')) {
+        return;
+      }
+
+      // Do not refocus on browser shortcut combinations (e.g. Ctrl++, Ctrl+-, Ctrl+0, Ctrl+R)
+      if (e.ctrlKey || e.metaKey || e.altKey) {
         return;
       }
 
@@ -171,22 +169,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
         aria-label="Typing input box"
       />
 
-      {/* Focus Lost Overlay (hidden when modal is open) */}
-      {!disabled && !isFocused && status !== 'completed' && (
-        <div className="absolute inset-0 bg-[#0c0f14]/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center text-slate-300 animate-in fade-in duration-200 pointer-events-none">
-          {isTouchDevice ? (
-            <Smartphone size={28} className="text-theme-main animate-bounce mb-2" />
-          ) : (
-            <MousePointerClick size={28} className="text-theme-main animate-bounce mb-2" />
-          )}
-          <p className="text-sm sm:text-base font-medium text-white font-sans">
-            {isTouchDevice ? 'Tap anywhere to open keyboard' : 'Click or press any key to focus'}
-          </p>
-          <p className="text-xs text-theme-sub mt-1 font-sans">Keep typing to continue</p>
-        </div>
-      )}
-
-      {/* Words Stream Container */}
+      {/* Words Stream Container - Always 100% clear and unblurred */}
       <div
         ref={wordsContainerRef}
         className={`relative ${
@@ -196,9 +179,9 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
         } overflow-y-hidden overflow-x-hidden font-mono leading-[1.8] sm:leading-[1.85] tracking-wide transition-all`}
       >
         {/* Animated Smooth Caret */}
-        {isFocused && status !== 'completed' && (
+        {status !== 'completed' && (
           <div
-            className={`typing-caret ${status === 'idle' ? 'blink' : ''}`}
+            className={`typing-caret ${status === 'idle' || !isFocused ? 'blink' : ''}`}
             style={{
               transform: `translate(${caretPos.left}px, ${caretPos.top}px)`,
               height: `${caretPos.height * 0.85}px`,

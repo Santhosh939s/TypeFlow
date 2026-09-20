@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { TestSettings, TestResult, TimelineSample, TestMetrics } from '../types';
 import { generateTestText } from '../utils/textGenerator';
 import { calculateMetrics } from '../utils/metrics';
@@ -298,11 +298,16 @@ export function useTypingEngine(
 
     if (status === 'completed') return;
 
-    // Handle Backspace
+    // Handle Backspace (including Ctrl+Backspace for word delete)
     if (e.key === 'Backspace') {
       e.preventDefault();
       const isWordDelete = e.ctrlKey || e.metaKey || e.altKey;
       processBackspace(isWordDelete);
+      return;
+    }
+
+    // Allow browser native shortcuts (Ctrl++, Ctrl+-, Ctrl+0, Ctrl+R, etc.)
+    if ((e.ctrlKey || e.metaKey || e.altKey) && e.key !== 'Backspace') {
       return;
     }
 
