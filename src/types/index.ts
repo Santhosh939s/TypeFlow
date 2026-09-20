@@ -1,4 +1,4 @@
-export type TestMode = 'time' | 'words' | 'learn' | 'dsa' | 'code' | 'quotes';
+export type TestMode = 'time' | 'words' | 'learn' | 'dsa' | 'code' | 'quotes' | 'daily';
 
 
 export type TimeDuration = 15 | 30 | 60 | 120;

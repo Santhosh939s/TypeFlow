@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { TestSettings, TestResult, TimelineSample, TestMetrics } from '../types';
 import { generateTestText } from '../utils/textGenerator';
 import { calculateMetrics } from '../utils/metrics';
@@ -357,6 +357,7 @@ export function useTypingEngine(
     timeLeft,
     elapsedTime,
     liveMetrics,
+    timeline,
     handleKeyDown,
     handleMobileInput,
     initializeNewTest,

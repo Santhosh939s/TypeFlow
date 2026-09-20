@@ -1,6 +1,7 @@
 import React from 'react';
-import { Clock, AlignLeft, Code, Quote as QuoteIcon, BookOpen, Hash, AtSign } from 'lucide-react';
+import { Clock, AlignLeft, Code, Quote as QuoteIcon, BookOpen, Hash, AtSign, Calendar, CheckCircle2 } from 'lucide-react';
 import { TimeDuration, WordCountOption, CodeLanguage, LearnCategory, TestSettings } from '../types';
+import { hasDoneToday, getTodayKey } from '../utils/dailyChallenge';
 
 interface ModeSelectorProps {
   settings: TestSettings;
@@ -31,6 +32,15 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
   ];
 
   const isCodeActive = settings.mode === 'code' || settings.mode === 'dsa';
+
+  // Daily challenge helpers — computed once per render
+  const isDoneToday = hasDoneToday();
+  const todayShort = (() => {
+    const key = getTodayKey();
+    const [y, m, d] = key.split('-');
+    const date = new Date(Number(y), Number(m) - 1, Number(d));
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  })();
 
   return (
     <div className={`w-full max-w-5xl mx-auto flex items-center justify-center transition-opacity duration-300 ${disabled ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
@@ -95,6 +105,27 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
           >
             <BookOpen size={14} />
             <span>Learn</span>
+          </button>
+
+          {/* Daily Challenge */}
+          <button
+            onClick={() => onUpdateSettings({ mode: 'daily' })}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all relative ${
+              settings.mode === 'daily'
+                ? 'bg-theme-main text-black font-semibold shadow-md'
+                : 'text-theme-sub hover:text-white hover:bg-white/5'
+            }`}
+            title={isDoneToday ? `Daily challenge done! · ${todayShort}` : `Daily challenge · ${todayShort}`}
+          >
+            {isDoneToday ? (
+              <CheckCircle2 size={14} className={settings.mode === 'daily' ? 'text-black' : 'text-emerald-400'} />
+            ) : (
+              <Calendar size={14} />
+            )}
+            <span>Daily</span>
+            {isDoneToday && settings.mode !== 'daily' && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-[var(--color-bg)]" />
+            )}
           </button>
         </div>
 
