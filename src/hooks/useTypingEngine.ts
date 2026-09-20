@@ -362,6 +362,7 @@ export function useTypingEngine(
     timeLeft,
     elapsedTime,
     liveMetrics,
+    timeline,
     handleKeyDown,
     handleMobileInput,
     initializeNewTest,

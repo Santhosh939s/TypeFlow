@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, VolumeX, History, Palette, Sparkles, Maximize2, Minimize2, Trophy, User } from 'lucide-react';
+import { Volume2, VolumeX, History, Palette, Sparkles, Maximize2, Minimize2, Trophy, User, Flame } from 'lucide-react';
 import { THEMES } from '../constants/themes';
 import { ThemeConfig, UserProfile } from '../types';
 import { Identicon } from './Identicon';
@@ -15,6 +15,7 @@ interface HeaderProps {
   onOpenProfile: () => void;
   onOpenAuth: () => void;
   onResetToHome: () => void;
+  dailyStreak?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -28,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenProfile,
   onOpenAuth,
   onResetToHome,
+  dailyStreak = 0,
 }) => {
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -91,6 +93,17 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Action Controls & Top-Right Profile */}
       <div className="flex items-center gap-1.5 sm:gap-2.5">
+        {/* Daily Streak Pill */}
+        {dailyStreak > 0 && (
+          <div
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400"
+            title={`${dailyStreak}-day daily challenge streak!`}
+          >
+            <Flame size={14} className="animate-pulse" />
+            <span className="text-xs font-bold font-mono">{dailyStreak}</span>
+          </div>
+        )}
+
         {/* Fullscreen Toggle */}
         <button
           onClick={toggleFullscreen}
