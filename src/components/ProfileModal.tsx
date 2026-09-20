@@ -14,9 +14,11 @@ import {
   ShieldCheck,
   User,
   LogOut,
+  Brain,
 } from 'lucide-react';
 import { UserProfile, TestResult } from '../types';
 import { Identicon } from './Identicon';
+import { WeaknessTrainer } from './WeaknessTrainer';
 import {
   generateRandomUsername,
   getNameSuggestions,
@@ -31,6 +33,7 @@ interface ProfileModalProps {
   onSignOut: () => void;
   history: TestResult[];
   personalBests: Record<string, number>;
+  onStartDrill: (text: string) => void;
 }
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
@@ -41,7 +44,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onSignOut,
   history,
   personalBests,
+  onStartDrill,
 }) => {
+  const [activeTab, setActiveTab] = useState<'profile' | 'trainer'>('profile');
   const [username, setUsername] = useState(profile?.username || '');
   const [title, setTitle] = useState(profile?.title || '');
   const [bio, setBio] = useState(profile?.bio || '');
@@ -61,6 +66,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setAvatarSeed(profile.avatarSeed || profile.username);
       setSuggestions(getNameSuggestions(4, profile.username));
       setSavedSuccess(false);
+      setActiveTab('profile'); // always start on profile tab
     }
   }, [isOpen, profile]);
   if (!isOpen || !profile) return null;
@@ -223,14 +229,18 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-5">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-theme-main/10 border border-theme-main/30 flex items-center justify-center text-theme-main">
-              <User size={18} />
+              {activeTab === 'profile' ? <User size={18} /> : <Brain size={18} />}
             </div>
             <div>
-              <h2 className="text-lg font-bold tracking-tight">Player Profile & Account</h2>
-              <p className="text-xs text-theme-sub">Customize your identity, avatar, and view badges</p>
+              <h2 className="text-lg font-bold tracking-tight">Player Profile &amp; Account</h2>
+              <p className="text-xs text-theme-sub">
+                {activeTab === 'profile'
+                  ? 'Customize your identity, avatar, and view badges'
+                  : 'AI-powered analysis of your typing weaknesses'}
+              </p>
             </div>
           </div>
           <button
@@ -241,6 +251,43 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           </button>
         </div>
 
+        {/* Tab Switcher */}
+        <div className="flex items-center gap-1 p-1 bg-white/[0.03] border border-white/5 rounded-xl mb-5">
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              activeTab === 'profile'
+                ? 'bg-theme-main text-black shadow'
+                : 'text-theme-sub hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <User size={13} />
+            <span>Profile</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('trainer')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              activeTab === 'trainer'
+                ? 'bg-theme-main text-black shadow'
+                : 'text-theme-sub hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Brain size={13} />
+            <span>🧠 AI Trainer</span>
+          </button>
+        </div>
+
+        {activeTab === 'trainer' ? (
+          /* ── AI Weakness Trainer Tab ─────────────────────────────────── */
+          <WeaknessTrainer
+            history={history}
+            onStartDrill={(text) => {
+              onClose();
+              onStartDrill(text);
+            }}
+          />
+        ) : (
+        <>
         {/* Profile Card & Avatar Section */}
         <div className="bg-white/5 border border-white/5 rounded-xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row items-center gap-5">
           {/* Avatar Display */}
@@ -491,7 +538,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           </div>
         </div>
 
-        {/* Footer Actions */}
+        {/* Footer Actions — shown only in profile tab */}
         <div className="flex items-center justify-between border-t border-white/10 pt-4">
           <button
             type="button"
@@ -505,30 +552,34 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <span>Sign Out</span>
           </button>
 
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-medium bg-white/5 text-theme-sub hover:text-white hover:bg-white/10 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              className="px-5 py-2 rounded-xl text-xs font-semibold bg-theme-main text-black hover:opacity-90 transition-all flex items-center gap-1.5 shadow-lg shadow-theme-main/20"
-            >
-              {savedSuccess ? (
-                <>
-                  <Check size={14} />
-                  <span>Saved!</span>
-                </>
-              ) : (
-                <span>Save Profile</span>
-              )}
-            </button>
-          </div>
+          {activeTab === 'profile' && (
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl text-xs font-medium bg-white/5 text-theme-sub hover:text-white hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                className="px-5 py-2 rounded-xl text-xs font-semibold bg-theme-main text-black hover:opacity-90 transition-all flex items-center gap-1.5 shadow-lg shadow-theme-main/20"
+              >
+                {savedSuccess ? (
+                  <>
+                    <Check size={14} />
+                    <span>Saved!</span>
+                  </>
+                ) : (
+                  <span>Save Profile</span>
+                )}
+              </button>
+            </div>
+          )}
         </div>
+        </>
+        )}
       </div>
     </div>
   );

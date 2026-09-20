@@ -4,6 +4,7 @@ import { ModeSelector } from './components/ModeSelector';
 import { LiveStatsBar } from './components/LiveStatsBar';
 import { TypingArea } from './components/TypingArea';
 import { ResultsModal } from './components/ResultsModal';
+import { DailyChallengeModal } from './components/DailyChallengeModal';
 import { HistoryModal } from './components/HistoryModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { AuthModal } from './components/AuthModal';
@@ -23,6 +24,11 @@ import {
   getActiveDsaChallenge,
   getNextDsaChallengeId,
 } from './utils/textGenerator';
+import {
+  getDailyStreak,
+  saveDailyRecord,
+  hasDoneToday,
+} from './utils/dailyChallenge';
 
 export function App() {
   const { user, isConfigured } = useAuth();
@@ -50,6 +56,10 @@ export function App() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
+  // Daily challenge state
+  const [dailyStreak, setDailyStreak] = useState<number>(() => getDailyStreak());
+  const [dailyAlreadyDone, setDailyAlreadyDone] = useState<boolean>(() => hasDoneToday());
+
   const isAnyModalOpen = isAuthOpen || isProfileOpen || isHistoryOpen || isLeaderboardOpen || !!completedResult;
 
   // Mechanical switch audio effects hook
@@ -73,12 +83,21 @@ export function App() {
     (result: TestResult) => {
       playSuccessSound();
       const { isPB } = saveTestResult(result);
-      setCompletedResult({ ...result, isPersonalBest: isPB });
+      const finalResult = { ...result, isPersonalBest: isPB };
+
+      // Daily Challenge: save to daily records and compute streak
+      if (result.mode === 'daily') {
+        const newStreak = saveDailyRecord(result.wpm, result.accuracy);
+        setDailyStreak(newStreak);
+        setDailyAlreadyDone(true);
+      }
+
+      setCompletedResult(finalResult);
     },
     [playSuccessSound, saveTestResult]
   );
 
-  // Core typing engine
+  // Core typing engine — timeline is tracked internally and surfaced via result.timeline
   const {
     text,
     words,
@@ -233,16 +252,28 @@ export function App() {
         onOpenProfile={() => setIsProfileOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
         onResetToHome={handleResetToHome}
+        dailyStreak={dailyStreak}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl xl:max-w-7xl w-full mx-auto">
         {completedResult ? (
-          <ResultsModal
-            result={completedResult}
-            onNextTest={handleNextTest}
-            onRepeatTest={handleRepeatTest}
-          />
+          /* Show Daily Challenge modal for daily mode, standard modal for everything else */
+          completedResult.mode === 'daily' ? (
+            <DailyChallengeModal
+              result={completedResult}
+              streak={dailyStreak}
+              alreadyDoneToday={dailyAlreadyDone}
+              onNextTest={handleNextTest}
+              onRepeatTest={handleRepeatTest}
+            />
+          ) : (
+            <ResultsModal
+              result={completedResult}
+              onNextTest={handleNextTest}
+              onRepeatTest={handleRepeatTest}
+            />
+          )
         ) : (
           <div className="w-full space-y-8 animate-in fade-in duration-300">
             {/* Mode selection pills */}
@@ -320,6 +351,10 @@ export function App() {
         onSignOut={logoutUser}
         history={history}
         personalBests={personalBests}
+        onStartDrill={(text) => {
+          setIsProfileOpen(false);
+          initializeNewTest(text);
+        }}
       />
 
       {/* Persistent History & Analytics Modal */}
