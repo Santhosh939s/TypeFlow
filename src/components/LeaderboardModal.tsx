@@ -90,6 +90,32 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ isOpen, onCl
             >
               Words
             </button>
+            <button
+              onClick={() => {
+                setMode('daily');
+                setModeConfig('quote');
+              }}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                mode === 'daily'
+                  ? 'bg-theme-main text-black font-semibold'
+                  : 'text-theme-sub hover:text-white'
+              }`}
+            >
+              Daily
+            </button>
+            <button
+              onClick={() => {
+                setMode('quotes');
+                setModeConfig('quote');
+              }}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                mode === 'quotes'
+                  ? 'bg-theme-main text-black font-semibold'
+                  : 'text-theme-sub hover:text-white'
+              }`}
+            >
+              Quotes
+            </button>
           </div>
 
           {/* Config options */}
@@ -108,7 +134,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ isOpen, onCl
                   {cfg}
                 </button>
               ))
-            ) : (
+            ) : mode === 'words' ? (
               ['10 words', '25 words', '50 words', '100 words'].map((cfg) => (
                 <button
                   key={cfg}
@@ -122,6 +148,10 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ isOpen, onCl
                   {cfg}
                 </button>
               ))
+            ) : (
+              <span className="px-2.5 py-1 rounded-lg text-xs bg-white/10 text-theme-sub font-mono">
+                Standard
+              </span>
             )}
           </div>
         </div>

@@ -101,6 +101,32 @@ export function useLocalStorage() {
     });
   };
 
+  const syncedIdsRef = useRef<Set<string>>(new Set());
+
+  // Auto-sync unsynced local tests to cloud when authenticated
+  useEffect(() => {
+    if (!profile?.id || !isConfigured) return;
+
+    const unsynced = history.filter(
+      (item) => item.id.startsWith('test-') && !syncedIdsRef.current.has(item.id)
+    );
+    if (unsynced.length === 0) return;
+
+    unsynced.slice(0, 10).forEach(async (test) => {
+      syncedIdsRef.current.add(test.id);
+      try {
+        const cloudId = await dbService.saveTestResult(profile.id!, test);
+        if (cloudId) {
+          setHistory((current) =>
+            current.map((item) => (item.id === test.id ? { ...item, id: cloudId } : item))
+          );
+        }
+      } catch (err) {
+        console.warn('[useLocalStorage] Auto-sync local test note:', err);
+      }
+    });
+  }, [profile?.id, isConfigured, history]);
+
   const loginUser = (newProfile: UserProfile) => {
     setProfile(newProfile);
     authService.saveUser(newProfile);
