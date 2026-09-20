@@ -280,7 +280,6 @@ export function App() {
             <ModeSelector
               settings={settings}
               onUpdateSettings={handleUpdateSettings}
-              disabled={status === 'running'}
             />
 
             {/* Live Stats display & progress bar */}
