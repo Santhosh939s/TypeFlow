@@ -13,25 +13,36 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ isOpen, onCl
   const { user, isConfigured } = useAuth();
   const [mode, setMode] = useState<TestMode>('time');
   const [modeConfig, setModeConfig] = useState<string>('30s');
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [entries, setEntries] = useState<LeaderboardEntry[]>(() => {
+    return dbService.getCachedLeaderboard('time', '30s');
+  });
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
+  const loadLeaderboard = async (force: boolean = false) => {
+    if (force) setIsRefreshing(true);
+    else if (entries.length === 0) setIsLoading(true);
+
+    try {
+      const data = await dbService.fetchLeaderboard(mode, modeConfig, 25, force);
+      setEntries(data);
+    } catch (err) {
+      console.warn('[LeaderboardModal] Error fetching leaderboard:', err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) return;
-
-    const loadLeaderboard = async () => {
-      setIsLoading(true);
-      try {
-        const data = await dbService.fetchLeaderboard(mode, modeConfig, 25);
-        setEntries(data);
-      } catch (err) {
-        console.warn('[LeaderboardModal] Error fetching leaderboard:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadLeaderboard();
+    // Instantly set cached or baseline records for the selected mode
+    const cached = dbService.getCachedLeaderboard(mode, modeConfig);
+    if (cached.length > 0) {
+      setEntries(cached);
+    }
+    // Background revalidate
+    loadLeaderboard(false);
   }, [isOpen, mode, modeConfig]);
 
   if (!isOpen) return null;
@@ -49,16 +60,31 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ isOpen, onCl
               <Trophy size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold">Community Leaderboard</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold">Community Leaderboard</h2>
+                <span className="text-[10px] uppercase font-mono tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  ⚡ Fast Cache
+                </span>
+              </div>
               <p className="text-xs text-theme-sub">Global rankings for precision speed typing</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg text-theme-sub hover:text-white hover:bg-white/5 transition-colors"
-          >
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => loadLeaderboard(true)}
+              disabled={isRefreshing}
+              title="Force refresh from Cloud"
+              className="p-2 rounded-lg text-theme-sub hover:text-white hover:bg-white/5 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={isRefreshing ? 'animate-spin text-theme-main' : ''} />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg text-theme-sub hover:text-white hover:bg-white/5 transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Filter Bar */}
