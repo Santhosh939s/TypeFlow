@@ -6,13 +6,11 @@ import { hasDoneToday, getTodayKey } from '../utils/dailyChallenge';
 interface ModeSelectorProps {
   settings: TestSettings;
   onUpdateSettings: (updates: Partial<TestSettings>) => void;
-  disabled?: boolean;
 }
 
 export const ModeSelector: React.FC<ModeSelectorProps> = ({
   settings,
   onUpdateSettings,
-  disabled = false,
 }) => {
   const timeDurations: TimeDuration[] = [15, 30, 60, 120];
   const wordCounts: WordCountOption[] = [10, 25, 50, 100];
@@ -43,7 +41,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
   })();
 
   return (
-    <div className={`w-full mx-auto flex items-center justify-center transition-opacity duration-300 ${disabled ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+    <div className="w-full mx-auto flex items-center justify-center transition-opacity duration-300">
       <div className="flex items-center justify-center gap-1.5 p-1.5 rounded-2xl bg-white/[0.03] border border-white/5 shadow-inner flex-nowrap overflow-x-auto max-w-full">
         {/* Modes */}
         <div className="flex items-center gap-1 flex-shrink-0">
