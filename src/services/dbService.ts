@@ -1,7 +1,39 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { TestResult, LeaderboardEntry, TestMode } from '../types';
+import { getDefaultLeaderboard } from '../data/defaultLeaderboards';
+
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache TTL
+const memoryLeaderboardCache = new Map<string, { data: LeaderboardEntry[]; timestamp: number }>();
+
+function getCacheKey(mode: string, modeConfig: string): string {
+  return `typeflow_lb_${mode}_${modeConfig}`;
+}
 
 export const dbService = {
+  /**
+   * Synchronously retrieve cached or bundled baseline leaderboard records (0ms latency)
+   */
+  getCachedLeaderboard(mode: string, modeConfig: string): LeaderboardEntry[] {
+    const key = getCacheKey(mode, modeConfig);
+    const inMem = memoryLeaderboardCache.get(key);
+    if (inMem && inMem.data.length > 0) {
+      return inMem.data;
+    }
+
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed.data) && parsed.data.length > 0) {
+          memoryLeaderboardCache.set(key, parsed);
+          return parsed.data;
+        }
+      }
+    } catch {}
+
+    return getDefaultLeaderboard(mode, modeConfig);
+  },
+
   async saveTestResult(userId: string, result: TestResult): Promise<string | null> {
     if (!isSupabaseConfigured() || !supabase) return null;
 
@@ -38,6 +70,13 @@ export const dbService = {
       console.error('[dbService] Failed to save test to cloud:', error);
       throw error;
     }
+
+    // Invalidate local cache for this category so next leaderboard view fetches newest scores
+    const cacheKey = getCacheKey(result.mode, result.modeConfig);
+    memoryLeaderboardCache.delete(cacheKey);
+    try {
+      localStorage.removeItem(cacheKey);
+    } catch {}
 
     return data?.id || null;
   },
@@ -99,73 +138,110 @@ export const dbService = {
 
   async fetchLeaderboard(
     mode: string = 'time',
-    modeConfig: string = '30',
-    limit: number = 20
+    modeConfig: string = '30s',
+    limit: number = 25,
+    forceRefresh: boolean = false
   ): Promise<LeaderboardEntry[]> {
-    if (!isSupabaseConfigured() || !supabase) return [];
+    const key = getCacheKey(mode, modeConfig);
 
-    try {
-      // First try querying the helper view if created
-      const { data, error } = await supabase
-        .from('leaderboards')
-        .select('*')
-        .eq('mode', mode)
-        .eq('mode_config', modeConfig)
-        .order('wpm', { ascending: false })
-        .limit(limit);
-
-      if (!error && data) {
-        return data as LeaderboardEntry[];
+    // 1. Check in-memory / local storage cache if not forcing refresh
+    if (!forceRefresh) {
+      const inMem = memoryLeaderboardCache.get(key);
+      const now = Date.now();
+      if (inMem && now - inMem.timestamp < CACHE_TTL_MS && inMem.data.length > 0) {
+        return inMem.data;
       }
 
-      // Fallback: direct join between test_results and profiles
-      const { data: fallbackData, error: fallbackError } = await supabase
-        .from('test_results')
-        .select(`
-          id,
-          user_id,
-          mode,
-          mode_config,
-          wpm,
-          raw_wpm,
-          accuracy,
-          consistency,
-          elapsed_seconds,
-          created_at,
-          profiles (
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
-        .eq('mode', mode)
-        .eq('mode_config', modeConfig)
-        .order('wpm', { ascending: false })
-        .limit(limit);
-
-      if (fallbackError || !fallbackData) {
-        return [];
-      }
-
-      return fallbackData.map((row: any) => ({
-        test_id: row.id,
-        user_id: row.user_id,
-        username: row.profiles?.username || 'Typist',
-        display_name: row.profiles?.display_name || row.profiles?.username || 'Typist',
-        avatar_url: row.profiles?.avatar_url || '',
-        mode: row.mode as TestMode,
-        mode_config: row.mode_config,
-        wpm: row.wpm,
-        raw_wpm: row.raw_wpm,
-        accuracy: row.accuracy,
-        consistency: row.consistency,
-        elapsed_seconds: row.elapsed_seconds,
-        created_at: row.created_at,
-      }));
-    } catch (err) {
-      console.warn('[dbService] fetchLeaderboard error:', err);
-      return [];
+      try {
+        const stored = localStorage.getItem(key);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed.data) && now - parsed.timestamp < CACHE_TTL_MS) {
+            memoryLeaderboardCache.set(key, parsed);
+            return parsed.data;
+          }
+        }
+      } catch {}
     }
+
+    // 2. Fetch fresh scores from Supabase cloud
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('leaderboards')
+          .select('*')
+          .eq('mode', mode)
+          .eq('mode_config', modeConfig)
+          .order('wpm', { ascending: false })
+          .limit(limit);
+
+        if (!error && data && data.length > 0) {
+          const entries = data as LeaderboardEntry[];
+          // Update cache
+          const payload = { data: entries, timestamp: Date.now() };
+          memoryLeaderboardCache.set(key, payload);
+          try {
+            localStorage.setItem(key, JSON.stringify(payload));
+          } catch {}
+          return entries;
+        }
+
+        // Fallback query if leaderboards view is pending
+        const { data: fallbackData } = await supabase
+          .from('test_results')
+          .select(`
+            id,
+            user_id,
+            mode,
+            mode_config,
+            wpm,
+            raw_wpm,
+            accuracy,
+            consistency,
+            elapsed_seconds,
+            created_at,
+            profiles (
+              username,
+              display_name,
+              avatar_url
+            )
+          `)
+          .eq('mode', mode)
+          .eq('mode_config', modeConfig)
+          .order('wpm', { ascending: false })
+          .limit(limit);
+
+        if (fallbackData && fallbackData.length > 0) {
+          const entries = fallbackData.map((row: any) => ({
+            test_id: row.id,
+            user_id: row.user_id,
+            username: row.profiles?.username || 'Typist',
+            display_name: row.profiles?.display_name || row.profiles?.username || 'Typist',
+            avatar_url: row.profiles?.avatar_url || '',
+            mode: row.mode as TestMode,
+            mode_config: row.mode_config,
+            wpm: row.wpm,
+            raw_wpm: row.raw_wpm,
+            accuracy: row.accuracy,
+            consistency: row.consistency,
+            elapsed_seconds: row.elapsed_seconds,
+            created_at: row.created_at,
+          }));
+
+          const payload = { data: entries, timestamp: Date.now() };
+          memoryLeaderboardCache.set(key, payload);
+          try {
+            localStorage.setItem(key, JSON.stringify(payload));
+          } catch {}
+          return entries;
+        }
+      } catch (err) {
+        console.warn('[dbService] Cloud leaderboard fetch notice:', err);
+      }
+    }
+
+    // 3. Fallback to bundled offline dataset
+    return this.getCachedLeaderboard(mode, modeConfig);
   },
 
   async clearUserHistory(userId: string): Promise<void> {
