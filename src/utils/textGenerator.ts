@@ -4,6 +4,7 @@ import { FAMOUS_QUOTES } from '../constants/quotes';
 import { LEARN_CONCEPTS } from '../constants/learnConcepts';
 import { DSA_CHALLENGES } from '../constants/dsaChallenges';
 import { TestSettings, LearnItem, DsaChallenge, LearnCategory } from '../types';
+import { getDailyText } from './dailyChallenge';
 
 export function getActiveLearnItem(settings: TestSettings): LearnItem {
   if (settings.selectedLearnId) {
@@ -40,6 +41,11 @@ export function getNextDsaChallengeId(currentId: string): string {
 }
 
 export function generateTestText(settings: TestSettings): string {
+  // 0. Daily Challenge: seeded from today's date — same for all users
+  if (settings.mode === 'daily') {
+    return getDailyText();
+  }
+
   // 1. Learn Mode: Concepts & Definitions
   if (settings.mode === 'learn') {
     const activeItem = getActiveLearnItem(settings);
