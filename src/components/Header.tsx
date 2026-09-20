@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, VolumeX, History, Palette, Sparkles, Maximize2, Minimize2, Trophy, LogIn } from 'lucide-react';
+import { Volume2, VolumeX, History, Palette, Sparkles, Maximize2, Minimize2, Trophy, User } from 'lucide-react';
 import { THEMES } from '../constants/themes';
 import { ThemeConfig, UserProfile } from '../types';
 import { Identicon } from './Identicon';
@@ -14,6 +14,7 @@ interface HeaderProps {
   profile: UserProfile | null;
   onOpenProfile: () => void;
   onOpenAuth: () => void;
+  onResetToHome: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -26,6 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   profile,
   onOpenProfile,
   onOpenAuth,
+  onResetToHome,
 }) => {
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -62,18 +64,22 @@ export const Header: React.FC<HeaderProps> = ({
   const currentTheme = THEMES.find((t) => t.id === currentThemeId) || THEMES[0];
 
   return (
-    <header className="w-full max-w-5xl mx-auto pt-4 sm:pt-6 pb-4 px-3 sm:px-4 flex items-center justify-between border-b border-white/5">
-      {/* Brand Logo */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
-        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-theme-main/10 border border-theme-main/30 flex items-center justify-center text-theme-main shadow-[0_0_20px_rgba(16,185,129,0.15)] transition-all hover:scale-105">
+    <header className="w-full px-4 sm:px-8 lg:px-12 py-3.5 sm:py-4 flex items-center justify-between border-b border-white/5 transition-all bg-[#0d1017]/40 backdrop-blur-md">
+      {/* Brand Logo - Interactive Home Reset Button */}
+      <button
+        onClick={onResetToHome}
+        title="TypeFlow Home — Click to return to original page"
+        className="flex items-center gap-2.5 sm:gap-3 text-left group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-main/50 rounded-xl p-1 -m-1 transition-all"
+      >
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-theme-main/10 border border-theme-main/30 flex items-center justify-center text-theme-main shadow-[0_0_20px_rgba(16,185,129,0.15)] group-hover:scale-105 group-hover:border-theme-main/60 group-hover:shadow-[0_0_25px_rgba(16,185,129,0.3)] transition-all">
           <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
             <path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm0 2v8h16V8H4zm2 2h2v2H6v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2zM6 13h12v2H6v-2z" />
           </svg>
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-1.5">
-              Type<span className="text-theme-main">Flow</span>
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-1.5 group-hover:text-white/95">
+              Type<span className="text-theme-main group-hover:brightness-110 transition-all">Flow</span>
             </h1>
             <span className="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-white/5 text-theme-sub border border-white/10 hidden xs:inline-block">
               v1.2
@@ -81,9 +87,9 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <p className="text-xs text-theme-sub hidden md:block">Precision Typing Engine &bull; Cloud Synced</p>
         </div>
-      </div>
+      </button>
 
-      {/* Action Controls */}
+      {/* Action Controls & Top-Right Profile */}
       <div className="flex items-center gap-1.5 sm:gap-2.5">
         {/* Fullscreen Toggle */}
         <button
@@ -117,42 +123,6 @@ export const Header: React.FC<HeaderProps> = ({
           <Trophy size={16} className="text-amber-400" />
           <span className="hidden md:inline">Leaderboard</span>
         </button>
-
-        {/* Profile / Account Trigger or Sign In Button */}
-        {profile ? (
-          <button
-            onClick={onOpenProfile}
-            title="Account Profile & Custom Avatar"
-            className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 bg-white/5 text-white border border-white/10 hover:border-theme-main/40 hover:bg-white/10 transition-all group"
-          >
-            {profile.customAvatar ? (
-              <img
-                src={profile.customAvatar}
-                alt={profile.username}
-                className="w-5 h-5 rounded-md object-cover ring-1 ring-white/20 group-hover:ring-theme-main/50 transition-all"
-              />
-            ) : (
-              <Identicon
-                seed={profile.avatarSeed || profile.username}
-                size={20}
-                showBorder={false}
-                className="rounded-md"
-              />
-            )}
-            <span className="hidden sm:inline font-mono text-[11px] max-w-[90px] truncate text-theme-sub group-hover:text-white transition-colors">
-              @{profile.username}
-            </span>
-          </button>
-        ) : (
-          <button
-            onClick={onOpenAuth}
-            title="Sign In or Create an Account"
-            className="px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-theme-main text-black hover:opacity-90 active:scale-[0.98] transition-all shadow-sm shadow-theme-main/20"
-          >
-            <LogIn size={14} />
-            <span>Sign In</span>
-          </button>
-        )}
 
         {/* History / Stats Modal Trigger */}
         <button
@@ -215,6 +185,54 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
         </div>
+
+        {/* Visual Divider separating utilities from Profile */}
+        <div className="h-6 w-px bg-white/10 mx-0.5 hidden xs:block" />
+
+        {/* Dedicated Top-Right Corner Profile Section */}
+        {profile ? (
+          <button
+            onClick={onOpenProfile}
+            title="Personal Info & Profile Settings"
+            className="p-1 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-medium flex items-center gap-2 bg-white/5 text-white border border-white/10 hover:border-theme-main/40 hover:bg-white/10 transition-all group"
+          >
+            {profile.customAvatar ? (
+              <img
+                src={profile.customAvatar}
+                alt={profile.username}
+                className="w-6 h-6 rounded-lg object-cover ring-1 ring-white/20 group-hover:ring-theme-main/50 transition-all"
+              />
+            ) : (
+              <Identicon
+                seed={profile.avatarSeed || profile.username}
+                size={24}
+                showBorder={false}
+                className="rounded-lg"
+              />
+            )}
+            <div className="hidden sm:flex flex-col text-left">
+              <span className="font-mono text-[11px] font-semibold max-w-[100px] truncate text-white leading-tight">
+                @{profile.username}
+              </span>
+              <span className="text-[9px] text-theme-sub flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Profile
+              </span>
+            </div>
+          </button>
+        ) : (
+          <button
+            onClick={onOpenAuth}
+            title="Sign In or Create an Account"
+            className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 bg-theme-main/15 hover:bg-theme-main/25 text-white border border-theme-main/40 hover:border-theme-main/60 transition-all group shadow-sm"
+          >
+            <div className="w-6 h-6 rounded-lg bg-theme-main/20 border border-theme-main/40 flex items-center justify-center text-theme-main group-hover:scale-105 transition-transform">
+              <User size={14} />
+            </div>
+            <span className="hidden sm:inline font-semibold text-white/90 group-hover:text-white">
+              Sign In
+            </span>
+          </button>
+        )}
       </div>
     </header>
   );

@@ -4,7 +4,7 @@ import { authService } from '../services/authService';
 import { dbService } from '../services/dbService';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 
-const DEFAULT_SETTINGS: TestSettings = {
+export const DEFAULT_SETTINGS: TestSettings = {
   mode: 'time',
   timeDuration: 30,
   wordCount: 25,

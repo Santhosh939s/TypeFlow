@@ -33,7 +33,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
   const isCodeActive = settings.mode === 'code' || settings.mode === 'dsa';
 
   return (
-    <div className={`w-full max-w-5xl mx-auto flex items-center justify-center transition-opacity duration-300 ${disabled ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+    <div className={`w-full mx-auto flex items-center justify-center transition-opacity duration-300 ${disabled ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
       <div className="flex items-center justify-center gap-1.5 p-1.5 rounded-2xl bg-white/[0.03] border border-white/5 shadow-inner flex-nowrap overflow-x-auto max-w-full">
         {/* Modes */}
         <div className="flex items-center gap-1 flex-shrink-0">

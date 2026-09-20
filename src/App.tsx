@@ -11,7 +11,7 @@ import { ShortcutsBar } from './components/ShortcutsBar';
 import { InteractiveLearningCard } from './components/InteractiveLearningCard';
 import { InteractiveDsaCard } from './components/InteractiveDsaCard';
 import { ProfileModal } from './components/ProfileModal';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import { useLocalStorage, DEFAULT_SETTINGS } from './hooks/useLocalStorage';
 import { useTypingEngine } from './hooks/useTypingEngine';
 import { useSoundEffects } from './hooks/useSoundEffects';
 import { useAuth } from './context/AuthContext';
@@ -142,6 +142,23 @@ export function App() {
     initializeNewTest();
   };
 
+  // Reset back to original homepage state (Time mode, 30s)
+  const handleResetToHome = () => {
+    setIsAuthOpen(false);
+    setIsProfileOpen(false);
+    setIsLeaderboardOpen(false);
+    setIsHistoryOpen(false);
+    setCompletedResult(null);
+
+    const resetSettings: TestSettings = {
+      ...DEFAULT_SETTINGS,
+      soundEnabled: settings.soundEnabled,
+      themeId: settings.themeId,
+    };
+    setSettings(resetSettings);
+    initializeNewTest(undefined, resetSettings);
+  };
+
   // Keyboard shortcut listener: Tab to restart, Esc to clear modals
   useEffect(() => {
     const handleGlobalShortcuts = (e: KeyboardEvent) => {
@@ -215,10 +232,11 @@ export function App() {
         profile={profile}
         onOpenProfile={() => setIsProfileOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
+        onResetToHome={handleResetToHome}
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-8 max-w-5xl w-full mx-auto">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl xl:max-w-7xl w-full mx-auto">
         {completedResult ? (
           <ResultsModal
             result={completedResult}
@@ -320,7 +338,7 @@ export function App() {
       />
 
       {/* Footer */}
-      <footer className="w-full max-w-5xl mx-auto py-6 px-4 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs text-theme-sub gap-2">
+      <footer className="w-full max-w-6xl xl:max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs text-theme-sub gap-2">
         <div className="flex items-center gap-2">
           <span
             className={`w-2 h-2 rounded-full ${

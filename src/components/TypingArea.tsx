@@ -151,7 +151,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     <div
       ref={containerRef}
       onClick={handleContainerClick}
-      className="relative w-full max-w-5xl mx-auto min-h-[250px] sm:min-h-[290px] md:min-h-[310px] p-6 sm:p-10 md:p-12 rounded-2xl sm:rounded-3xl bg-[#11141c]/80 border border-white/5 shadow-2xl backdrop-blur-md cursor-text select-none overflow-hidden transition-all duration-300 hover:border-white/10"
+      className="relative w-full mx-auto min-h-[250px] sm:min-h-[290px] md:min-h-[310px] p-6 sm:p-10 md:p-12 rounded-2xl sm:rounded-3xl bg-[#11141c]/80 border border-white/5 shadow-2xl backdrop-blur-md cursor-text select-none overflow-hidden transition-all duration-300 hover:border-white/10"
     >
       {/* Invisible accessible input supporting physical & virtual touch keyboards */}
       <input

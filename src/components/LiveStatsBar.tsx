@@ -77,7 +77,7 @@ export const LiveStatsBar: React.FC<LiveStatsBarProps> = ({
   const unitLabel = mode === 'code' ? 'tokens' : 'words';
 
   return (
-    <div className="w-full max-w-5xl mx-auto mb-6">
+    <div className="w-full mx-auto mb-6">
       {/* Top metrics badges */}
       <div className="flex items-center justify-between px-2 mb-2">
         {/* Left: Primary Live Metric (Time or Word Progress) */}
