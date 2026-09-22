@@ -12,6 +12,7 @@ import { ShortcutsBar } from './components/ShortcutsBar';
 import { InteractiveLearningCard } from './components/InteractiveLearningCard';
 import { InteractiveDsaCard } from './components/InteractiveDsaCard';
 import { ProfileModal } from './components/ProfileModal';
+import { AiTrainerModal } from './components/AiTrainerModal';
 import { useLocalStorage, DEFAULT_SETTINGS } from './hooks/useLocalStorage';
 import { useTypingEngine } from './hooks/useTypingEngine';
 import { useSoundEffects } from './hooks/useSoundEffects';
@@ -54,13 +55,14 @@ export function App() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isAiTrainerOpen, setIsAiTrainerOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   // Daily challenge state
   const [dailyStreak, setDailyStreak] = useState<number>(() => getDailyStreak());
   const [dailyAlreadyDone, setDailyAlreadyDone] = useState<boolean>(() => hasDoneToday());
 
-  const isAnyModalOpen = isAuthOpen || isProfileOpen || isHistoryOpen || isLeaderboardOpen || !!completedResult;
+  const isAnyModalOpen = isAuthOpen || isProfileOpen || isAiTrainerOpen || isHistoryOpen || isLeaderboardOpen || !!completedResult;
 
   // Mechanical switch audio effects hook
   const { playKeySound, playErrorSound, playSuccessSound } = useSoundEffects(settings.soundEnabled);
@@ -165,6 +167,7 @@ export function App() {
   const handleResetToHome = () => {
     setIsAuthOpen(false);
     setIsProfileOpen(false);
+    setIsAiTrainerOpen(false);
     setIsLeaderboardOpen(false);
     setIsHistoryOpen(false);
     setCompletedResult(null);
@@ -218,6 +221,10 @@ export function App() {
           setIsProfileOpen(false);
           return;
         }
+        if (isAiTrainerOpen) {
+          setIsAiTrainerOpen(false);
+          return;
+        }
         if (isLeaderboardOpen) {
           setIsLeaderboardOpen(false);
           return;
@@ -236,7 +243,7 @@ export function App() {
 
     window.addEventListener('keydown', handleGlobalShortcuts);
     return () => window.removeEventListener('keydown', handleGlobalShortcuts);
-  }, [initializeNewTest, isAnyModalOpen, isAuthOpen, isProfileOpen, isLeaderboardOpen, isHistoryOpen, completedResult]);
+  }, [initializeNewTest, isAnyModalOpen, isAuthOpen, isProfileOpen, isAiTrainerOpen, isLeaderboardOpen, isHistoryOpen, completedResult]);
 
   return (
     <div className="min-h-[100dvh] flex flex-col justify-between transition-colors duration-300">
@@ -248,6 +255,7 @@ export function App() {
         onToggleSound={handleToggleSound}
         onOpenHistory={() => setIsHistoryOpen(true)}
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
+        onOpenAiTrainer={() => setIsAiTrainerOpen(true)}
         profile={profile}
         onOpenProfile={() => setIsProfileOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
@@ -280,6 +288,7 @@ export function App() {
             <ModeSelector
               settings={settings}
               onUpdateSettings={handleUpdateSettings}
+              onOpenAiTrainer={() => setIsAiTrainerOpen(true)}
             />
 
             {/* Live Stats display & progress bar */}
@@ -352,6 +361,18 @@ export function App() {
         personalBests={personalBests}
         onStartDrill={(text) => {
           setIsProfileOpen(false);
+          initializeNewTest(text);
+        }}
+      />
+
+      {/* Standalone AI Weakness Trainer Modal */}
+      <AiTrainerModal
+        isOpen={isAiTrainerOpen}
+        onClose={() => setIsAiTrainerOpen(false)}
+        history={history}
+        onStartDrill={(text) => {
+          setIsAiTrainerOpen(false);
+          setCompletedResult(null);
           initializeNewTest(text);
         }}
       />

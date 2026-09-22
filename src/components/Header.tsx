@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, VolumeX, History, Palette, Sparkles, Maximize2, Minimize2, Trophy, User, Flame } from 'lucide-react';
+import { Volume2, VolumeX, History, Palette, Sparkles, Maximize2, Minimize2, Trophy, User, Flame, Brain } from 'lucide-react';
 import { THEMES } from '../constants/themes';
 import { ThemeConfig, UserProfile } from '../types';
 import { Identicon } from './Identicon';
@@ -11,6 +11,7 @@ interface HeaderProps {
   onToggleSound: () => void;
   onOpenHistory: () => void;
   onOpenLeaderboard: () => void;
+  onOpenAiTrainer: () => void;
   profile: UserProfile | null;
   onOpenProfile: () => void;
   onOpenAuth: () => void;
@@ -25,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSound,
   onOpenHistory,
   onOpenLeaderboard,
+  onOpenAiTrainer,
   profile,
   onOpenProfile,
   onOpenAuth,
@@ -135,6 +137,16 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Trophy size={16} className="text-amber-400" />
           <span className="hidden md:inline">Leaderboard</span>
+        </button>
+
+        {/* AI Weakness Trainer Trigger */}
+        <button
+          onClick={onOpenAiTrainer}
+          title="Open AI Weakness Trainer & Custom Drills"
+          className="p-2 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-purple-500/10 text-purple-400 border border-purple-500/25 hover:bg-purple-500/20 hover:border-purple-500/40 hover:text-purple-300 transition-all shadow-sm"
+        >
+          <Brain size={16} className="text-purple-400" />
+          <span className="hidden md:inline font-semibold">AI Trainer</span>
         </button>
 
         {/* History / Stats Modal Trigger */}
