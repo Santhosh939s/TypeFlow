@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { RotateCcw, ArrowRight, Trophy, Copy, Check, Gauge, Target, Activity, Clock, Zap, TrendingDown, ShieldAlert, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { RotateCcw, ArrowRight, Trophy, Zap, Target, Activity, Clock, TrendingDown, ShieldAlert, Sparkles, Copy, Check } from 'lucide-react';
 import { TestResult } from '../types';
 import { PerformanceChart } from './PerformanceChart';
 
@@ -17,7 +17,7 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
   const [copied, setCopied] = useState(false);
 
   const handleCopyResult = () => {
-    const textToCopy = `⚡ TypeFlow Result: ${result.wpm} Net WPM | ${result.rawWpm} Raw WPM | ${result.accuracy}% Acc | Burst: ${result.burstWpm} WPM | Consistency: ${result.consistency}% | Mode: ${result.mode} (${result.modeConfig})`;
+    const textToCopy = `⚡ TypeFlow Result: ${result.wpm} WPM | ${result.rawWpm} Raw WPM | ${result.accuracy}% Acc | Burst: ${result.burstWpm} WPM | Consistency: ${result.consistency}% | Mode: ${result.mode} (${result.modeConfig})`;
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -46,16 +46,21 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
 
       {/* Main Hero Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        {/* Net WPM */}
+        {/* Primary WPM */}
         <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col">
           <span className="text-xs uppercase tracking-wider text-theme-sub flex items-center gap-1.5 font-medium mb-1">
-            <Gauge size={14} className="text-theme-main" /> Net WPM
+            <Zap size={14} className="text-theme-main" /> WPM
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl sm:text-5xl font-mono font-extrabold text-theme-main drop-shadow-[0_0_12px_rgba(16,185,129,0.25)]">
               {result.wpm}
             </span>
             <span className="text-xs text-theme-sub font-mono">wpm</span>
+            {result.netWpm < result.wpm && (
+              <span className="text-[10px] text-theme-sub font-mono ml-auto">
+                ({result.netWpm} net)
+              </span>
+            )}
           </div>
         </div>
 

@@ -109,13 +109,18 @@ export const DailyChallengeModal: React.FC<DailyChallengeModalProps> = ({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col">
           <span className="text-xs uppercase tracking-wider text-theme-sub flex items-center gap-1.5 font-medium mb-1">
-            <Zap size={14} className="text-theme-main" /> Net WPM
+            <Zap size={14} className="text-theme-main" /> WPM
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl sm:text-5xl font-mono font-extrabold text-theme-main drop-shadow-[0_0_12px_rgba(16,185,129,0.25)]">
               {result.wpm}
             </span>
             <span className="text-xs text-theme-sub font-mono">wpm</span>
+            {result.netWpm < result.wpm && (
+              <span className="text-[10px] text-theme-sub font-mono ml-auto">
+                ({result.netWpm} net)
+              </span>
+            )}
           </div>
         </div>
 
