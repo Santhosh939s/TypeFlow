@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, VolumeX, History, Palette, Sparkles, Maximize2, Minimize2, Trophy, User, Flame } from 'lucide-react';
+import { Volume2, VolumeX, History, Palette, Sparkles, Maximize2, Minimize2, Trophy, User, Flame, Brain } from 'lucide-react';
 import { THEMES } from '../constants/themes';
 import { ThemeConfig, UserProfile } from '../types';
 import { Identicon } from './Identicon';
@@ -11,6 +11,7 @@ interface HeaderProps {
   onToggleSound: () => void;
   onOpenHistory: () => void;
   onOpenLeaderboard: () => void;
+  onOpenAiTrainer: () => void;
   profile: UserProfile | null;
   onOpenProfile: () => void;
   onOpenAuth: () => void;
@@ -25,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSound,
   onOpenHistory,
   onOpenLeaderboard,
+  onOpenAiTrainer,
   profile,
   onOpenProfile,
   onOpenAuth,
@@ -199,8 +201,18 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Visual Divider separating utilities from Profile */}
+        {/* Visual Divider separating utilities from Profile & AI section */}
         <div className="h-6 w-px bg-white/10 mx-0.5 hidden xs:block" />
+
+        {/* AI Weakness Trainer Trigger — In Navbar along with Profile Section */}
+        <button
+          onClick={onOpenAiTrainer}
+          title="Open AI Weakness Trainer & Practice Lessons"
+          className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 hover:border-purple-500/50 transition-all shadow-sm group"
+        >
+          <Brain size={16} className="text-purple-400 group-hover:scale-110 transition-transform" />
+          <span className="hidden sm:inline font-semibold">AI Trainer</span>
+        </button>
 
         {/* Dedicated Top-Right Corner Profile Section */}
         {profile ? (

@@ -68,30 +68,30 @@ const BIGRAM_DIFFICULTY: Record<string, { label: string; baseDifficulty: number 
 // Every word contains at least one of the bigrams from BIGRAM_DIFFICULTY.
 
 const BIGRAM_DRILL_WORDS: Record<string, string[]> = {
-  qu: ['quick', 'quiet', 'queen', 'quite', 'query', 'quote', 'quest', 'quill', 'quake', 'quorum'],
-  wh: ['when', 'where', 'while', 'which', 'white', 'wheat', 'wheel', 'whole', 'whom', 'whisper'],
-  ph: ['phone', 'photo', 'phrase', 'phase', 'physics', 'graph', 'alpha', 'orphan', 'trophy', 'phobia'],
-  ck: ['clock', 'black', 'track', 'quick', 'stack', 'block', 'crack', 'knock', 'thick', 'check'],
-  th: ['that', 'then', 'them', 'this', 'think', 'there', 'three', 'throw', 'truth', 'thread'],
-  ch: ['each', 'much', 'such', 'rich', 'reach', 'teach', 'chair', 'chain', 'chance', 'chunk'],
-  gh: ['night', 'light', 'right', 'might', 'fight', 'sight', 'tight', 'eight', 'ought', 'ghost'],
-  br: ['bring', 'break', 'broad', 'brave', 'brain', 'brief', 'brush', 'brown', 'brand', 'breach'],
-  tr: ['track', 'train', 'trail', 'trust', 'trade', 'trend', 'tribe', 'trick', 'truth', 'tree'],
-  ng: ['long', 'ring', 'sing', 'bring', 'thing', 'strong', 'swing', 'along', 'among', 'spring'],
-  nd: ['find', 'kind', 'send', 'bond', 'fund', 'hand', 'land', 'mind', 'wind', 'stand'],
-  nt: ['print', 'front', 'paint', 'count', 'giant', 'plant', 'point', 'grant', 'event', 'spent'],
-  st: ['start', 'state', 'still', 'store', 'stand', 'step', 'storm', 'stone', 'stack', 'steam'],
-  pr: ['print', 'prove', 'prime', 'press', 'price', 'prior', 'prose', 'proud', 'probe', 'pride'],
-  ly: ['only', 'early', 'apply', 'daily', 'reply', 'truly', 'fully', 'slowly', 'clearly', 'gently'],
-  ry: ['story', 'every', 'carry', 'sorry', 'worry', 'hurry', 'query', 'berry', 'ferry', 'entry'],
-  pl: ['place', 'plan', 'plant', 'play', 'plea', 'plus', 'plane', 'plume', 'plate', 'plain'],
-  ve: ['have', 'give', 'live', 'love', 'move', 'save', 'serve', 'solve', 'drive', 'prove'],
-  wr: ['write', 'wrong', 'wrote', 'wrap', 'wrist', 'wren', 'wreck', 'wraith', 'writhe', 'wrung'],
-  sh: ['show', 'share', 'shelf', 'shift', 'shoot', 'short', 'shout', 'sheer', 'sharp', 'shine'],
-  ed: ['need', 'used', 'said', 'made', 'helped', 'moved', 'asked', 'noted', 'tried', 'saved'],
-  er: ['other', 'over', 'under', 'after', 'never', 'ever', 'power', 'cover', 'river', 'order'],
-  in: ['into', 'thin', 'main', 'mind', 'fine', 'link', 'line', 'mine', 'pine', 'wine'],
-  on: ['on', 'one', 'only', 'front', 'phone', 'stone', 'prone', 'clone', 'alone', 'blown'],
+  qu: ['quick', 'quiet', 'queen', 'quite', 'query', 'quote', 'quest', 'quill', 'quake', 'quorum', 'quaint', 'quiver', 'quench', 'quantum', 'equal', 'equity', 'squad', 'sequel', 'opaque', 'acquire', 'inquire'],
+  wh: ['when', 'where', 'while', 'which', 'white', 'wheat', 'wheel', 'whole', 'whom', 'whisper', 'whistle', 'wharf', 'whirl', 'somewhere', 'anywhere', 'nowhere', 'meanwhile', 'wholesome', 'overwhelm'],
+  ph: ['phone', 'photo', 'phrase', 'phase', 'physics', 'graph', 'alpha', 'orphan', 'trophy', 'phobia', 'sphere', 'nephew', 'phantom', 'symphony', 'triumph', 'emphasis', 'metaphor', 'philosophy', 'morph'],
+  ck: ['clock', 'black', 'track', 'quick', 'stack', 'block', 'crack', 'knock', 'thick', 'check', 'brick', 'flock', 'shock', 'plack', 'ticket', 'pocket', 'rocket', 'jacket', 'packet', 'bracket', 'cricket'],
+  th: ['that', 'then', 'them', 'this', 'think', 'there', 'three', 'throw', 'truth', 'thread', 'gather', 'further', 'breathe', 'leather', 'weather', 'smooth', 'author', 'method', 'python', 'strength'],
+  ch: ['each', 'much', 'such', 'rich', 'reach', 'teach', 'chair', 'chain', 'chance', 'chunk', 'search', 'speech', 'branch', 'church', 'launch', 'march', 'match', 'catch', 'pitch', 'switch', 'scholar'],
+  gh: ['night', 'light', 'right', 'might', 'fight', 'sight', 'tight', 'eight', 'ought', 'ghost', 'bright', 'flight', 'knight', 'weight', 'height', 'dough', 'though', 'borough', 'delight', 'straight'],
+  br: ['bring', 'break', 'broad', 'brave', 'brain', 'brief', 'brush', 'brown', 'brand', 'breach', 'bridge', 'branch', 'breeze', 'bronze', 'brother', 'bright', 'embrace', 'sober', 'fiber', 'hybrid'],
+  tr: ['track', 'train', 'trail', 'trust', 'trade', 'trend', 'tribe', 'trick', 'truth', 'tree', 'travel', 'matrix', 'stream', 'string', 'intro', 'metro', 'patron', 'sector', 'vector', 'distribute'],
+  ng: ['long', 'ring', 'sing', 'bring', 'thing', 'strong', 'swing', 'along', 'among', 'spring', 'string', 'belong', 'morning', 'evening', 'wing', 'hang', 'fang', 'song', 'young', 'tongue', 'angle'],
+  nd: ['find', 'kind', 'send', 'bond', 'fund', 'hand', 'land', 'mind', 'wind', 'stand', 'blend', 'grand', 'hound', 'round', 'sound', 'spend', 'trend', 'brand', 'second', 'island', 'defend'],
+  nt: ['print', 'front', 'paint', 'count', 'giant', 'plant', 'point', 'grant', 'event', 'spent', 'silent', 'parent', 'talent', 'decent', 'recent', 'client', 'agent', 'tenant', 'moment', 'fluent'],
+  st: ['start', 'state', 'still', 'store', 'stand', 'step', 'storm', 'stone', 'stack', 'steam', 'custom', 'system', 'foster', 'master', 'faster', 'listen', 'castle', 'stable', 'status', 'studio'],
+  pr: ['print', 'prove', 'prime', 'press', 'price', 'prior', 'prose', 'proud', 'probe', 'pride', 'proper', 'prompt', 'praise', 'profit', 'promise', 'protect', 'spring', 'sprout', 'spruce', 'spree'],
+  ly: ['only', 'early', 'apply', 'daily', 'reply', 'truly', 'fully', 'slowly', 'clearly', 'gently', 'softly', 'gladly', 'calmly', 'purely', 'rarely', 'lately', 'neatly', 'safely', 'keenly', 'boldly'],
+  ry: ['story', 'every', 'carry', 'sorry', 'worry', 'hurry', 'query', 'berry', 'ferry', 'entry', 'theory', 'memory', 'glory', 'ivory', 'cherry', 'diary', 'salary', 'luxury', 'misery', 'bakery'],
+  pl: ['place', 'plan', 'plant', 'play', 'plea', 'plus', 'plane', 'plume', 'plate', 'plain', 'pluck', 'plush', 'plenty', 'simple', 'sample', 'temple', 'purple', 'people', 'couple', 'triple'],
+  ve: ['have', 'give', 'live', 'love', 'move', 'save', 'serve', 'solve', 'drive', 'prove', 'brave', 'crave', 'grave', 'wave', 'cave', 'alive', 'arrive', 'thrive', 'clever', 'silver', 'river'],
+  wr: ['write', 'wrong', 'wrote', 'wrap', 'wrist', 'wren', 'wreck', 'wraith', 'writhe', 'wrung', 'wreath', 'wrestle', 'awry', 'rewrote', 'unwritten', 'playwright', 'typewriter', 'shipwreck'],
+  sh: ['show', 'share', 'shelf', 'shift', 'shoot', 'short', 'shout', 'sheer', 'sharp', 'shine', 'shadow', 'shape', 'shield', 'shore', 'brush', 'crush', 'flash', 'fresh', 'marsh', 'finish'],
+  ed: ['need', 'used', 'said', 'made', 'helped', 'moved', 'asked', 'noted', 'tried', 'saved', 'walked', 'looked', 'opened', 'closed', 'passed', 'formed', 'landed', 'marked', 'called', 'worked'],
+  er: ['other', 'over', 'under', 'after', 'never', 'ever', 'power', 'cover', 'river', 'order', 'water', 'paper', 'letter', 'number', 'finger', 'corner', 'silver', 'winter', 'summer', 'master'],
+  in: ['into', 'thin', 'main', 'mind', 'fine', 'link', 'line', 'mine', 'pine', 'wine', 'rain', 'gain', 'train', 'brain', 'drain', 'plain', 'stain', 'chain', 'shine', 'spin', 'twin'],
+  on: ['on', 'one', 'only', 'front', 'phone', 'stone', 'prone', 'clone', 'alone', 'blown', 'grown', 'known', 'shown', 'throne', 'dragon', 'beacon', 'button', 'cotton', 'lesson', 'person'],
 };
 
 // ─── Filler connective words to pad drill sentences naturally ────────────────
@@ -269,8 +269,9 @@ export function generateWeaknessPracticeText(
     return 'the quick brown fox jumps over the lazy dog';
   }
 
-  // Shuffle drill pool
-  const shuffled = drillPool.sort(() => Math.random() - 0.5);
+  // Shuffle both drill and filler pools with Fisher-Yates
+  const shuffledDrill = [...drillPool].sort(() => Math.random() - 0.5);
+  const shuffledFillers = [...FILLERS].sort(() => Math.random() - 0.5);
 
   const selectedWords: string[] = [];
   let drillIdx = 0;
@@ -281,12 +282,24 @@ export function generateWeaknessPracticeText(
 
   while (selectedWords.length < targetWordCount) {
     const useDrill = Math.random() < drillRatio;
-    if (useDrill && drillIdx < shuffled.length) {
-      selectedWords.push(shuffled[drillIdx % shuffled.length]);
+    let nextWord = '';
+
+    if (useDrill && drillIdx < shuffledDrill.length) {
+      nextWord = shuffledDrill[drillIdx % shuffledDrill.length];
       drillIdx++;
     } else {
-      selectedWords.push(FILLERS[fillerIdx % FILLERS.length]);
+      nextWord = shuffledFillers[fillerIdx % shuffledFillers.length];
       fillerIdx++;
+    }
+
+    // Avoid immediate word repetition (last 2 words)
+    const recent = selectedWords.slice(-2);
+    if (!recent.includes(nextWord)) {
+      selectedWords.push(nextWord);
+    } else {
+      // Pick a random alternative from the pool that isn't recent
+      const fallback = shuffledDrill.find(w => !recent.includes(w)) || nextWord;
+      selectedWords.push(fallback);
     }
   }
 
