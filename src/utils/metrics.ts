@@ -1,4 +1,113 @@
-﻿import { TestMetrics, TimelineSample, TestResult, DailyActivity } from '../types';
+import { TestMetrics, TimelineSample, TestResult, DailyActivity } from '../types';
+
+export interface DetailedCharacterCounts {
+  correctChars: number;
+  incorrectChars: number;
+  extraChars: number;
+  missedChars: number;
+  totalChars: number;
+}
+
+/**
+ * Standard Typing Speed Character Accounting (Monkeytype & International Standards):
+ * 1. Matching characters within typed words count as correct characters.
+ * 2. Mismatched characters count as incorrect characters.
+ * 3. Typed characters beyond the target word length count as extra characters.
+ * 4. Spaces/newlines between words:
+ *    - Each word submitted with Space/Enter adds 1 to correct characters if typed cleanly
+ *      (as 5 characters = 1 standard word includes spaces).
+ *    - If an erroneous word was submitted with Space, the space keystroke registers as a typed delimiter character.
+ * 5. Missed characters: Target characters left uncompleted when the test finishes.
+ */
+export function computeDetailedCharacterCounts(
+  targetWords: string[],
+  typedWords: string[],
+  currentWordIndex: number,
+  currentInput: string,
+  isCompleted: boolean = false
+): DetailedCharacterCounts {
+  let correctChars = 0;
+  let incorrectChars = 0;
+  let extraChars = 0;
+  let missedChars = 0;
+
+  // 1. Process past words already submitted
+  for (let wIdx = 0; wIdx < currentWordIndex && wIdx < targetWords.length; wIdx++) {
+    const target = targetWords[wIdx] || '';
+    const typed = typedWords[wIdx] || '';
+
+    let wordCorrect = true;
+    for (let i = 0; i < target.length; i++) {
+      if (i < typed.length) {
+        if (typed[i] === target[i]) {
+          correctChars++;
+        } else {
+          incorrectChars++;
+          wordCorrect = false;
+        }
+      } else {
+        missedChars++;
+        wordCorrect = false;
+      }
+    }
+
+    if (typed.length > target.length) {
+      extraChars += (typed.length - target.length);
+      wordCorrect = false;
+    }
+
+    // Space delimiter accounting:
+    // In standard typing, the space pressed to advance words counts as a keystroke/character.
+    // If the word was typed cleanly, the space is a correct character.
+    // If the word had errors, the space is counted as a typed delimiter character.
+    if (wordCorrect) {
+      correctChars++;
+    } else {
+      incorrectChars++;
+    }
+  }
+
+  // 2. Process current word actively being typed
+  if (currentWordIndex < targetWords.length) {
+    const target = targetWords[currentWordIndex] || '';
+    const typed = currentInput;
+
+    for (let i = 0; i < target.length; i++) {
+      if (i < typed.length) {
+        if (typed[i] === target[i]) {
+          correctChars++;
+        } else {
+          incorrectChars++;
+        }
+      } else if (isCompleted) {
+        // Only count untyped characters as missed if the test has actually completed
+        missedChars++;
+      }
+    }
+
+    if (typed.length > target.length) {
+      extraChars += (typed.length - target.length);
+    }
+  }
+
+  // 3. Process remaining unreached words if test is completed
+  if (isCompleted) {
+    for (let wIdx = currentWordIndex + 1; wIdx < targetWords.length; wIdx++) {
+      missedChars += targetWords[wIdx].length;
+      missedChars += 1; // Count unreached space
+    }
+  }
+
+  const totalChars = correctChars + incorrectChars + extraChars;
+
+  return {
+    correctChars,
+    incorrectChars,
+    extraChars,
+    missedChars,
+    totalChars,
+  };
+}
 
 export function calculateMetrics(
   correctChars: number,
@@ -6,21 +115,25 @@ export function calculateMetrics(
   extraChars: number,
   missedChars: number,
   elapsedSeconds: number,
-  timeline: TimelineSample[] = []
+  timeline: TimelineSample[] = [],
+  rawKeystrokes?: number
 ): TestMetrics {
-  const totalChars = correctChars + incorrectChars + extraChars;
+  const totalCharsFromLetters = correctChars + incorrectChars + extraChars;
+  // If physical keystrokes are tracked, raw typed input reflects all keystrokes
+  const totalChars = Math.max(totalCharsFromLetters, rawKeystrokes ?? 0);
   const minutes = Math.max(0.001, elapsedSeconds / 60);
 
   // Standard typing measurement: 5 keystrokes count as 1 word
   const rawWpm = Math.round((totalChars / 5) / minutes);
   const wpm = Math.round((correctChars / 5) / minutes);
   
-  // Net WPM penalizes errors
+  // Net WPM penalizes uncorrected errors
   const netWpm = Math.max(0, Math.round(((correctChars - incorrectChars) / 5) / minutes));
 
   // Accuracy percentage
-  const accuracy = totalChars > 0 
-    ? Math.min(100, Math.max(0, parseFloat(((correctChars / totalChars) * 100).toFixed(1))))
+  const accuracyDenominator = totalCharsFromLetters > 0 ? totalCharsFromLetters : totalChars;
+  const accuracy = accuracyDenominator > 0 
+    ? Math.min(100, Math.max(0, parseFloat(((correctChars / accuracyDenominator) * 100).toFixed(1))))
     : 100;
 
   // Accuracy Tax / Speed Loss: Speed directly forfeited due to typing errors
