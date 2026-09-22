@@ -288,7 +288,6 @@ export function App() {
             <ModeSelector
               settings={settings}
               onUpdateSettings={handleUpdateSettings}
-              onOpenAiTrainer={() => setIsAiTrainerOpen(true)}
             />
 
             {/* Live Stats display & progress bar */}

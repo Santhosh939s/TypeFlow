@@ -239,7 +239,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <p className="text-xs text-theme-sub">
                 {activeTab === 'profile'
                   ? 'Customize your identity, avatar, and view badges'
-                  : 'AI-powered analysis of your typing weaknesses'}
+                  : 'AI practice lessons & weakness analysis'}
               </p>
             </div>
           </div>

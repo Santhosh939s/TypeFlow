@@ -139,16 +139,6 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="hidden md:inline">Leaderboard</span>
         </button>
 
-        {/* AI Weakness Trainer Trigger */}
-        <button
-          onClick={onOpenAiTrainer}
-          title="Open AI Weakness Trainer & Custom Drills"
-          className="p-2 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-purple-500/10 text-purple-400 border border-purple-500/25 hover:bg-purple-500/20 hover:border-purple-500/40 hover:text-purple-300 transition-all shadow-sm"
-        >
-          <Brain size={16} className="text-purple-400" />
-          <span className="hidden md:inline font-semibold">AI Trainer</span>
-        </button>
-
         {/* History / Stats Modal Trigger */}
         <button
           onClick={onOpenHistory}
@@ -211,8 +201,18 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Visual Divider separating utilities from Profile */}
+        {/* Visual Divider separating utilities from Profile & AI section */}
         <div className="h-6 w-px bg-white/10 mx-0.5 hidden xs:block" />
+
+        {/* AI Weakness Trainer Trigger — In Navbar along with Profile Section */}
+        <button
+          onClick={onOpenAiTrainer}
+          title="Open AI Weakness Trainer & Practice Lessons"
+          className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 hover:border-purple-500/50 transition-all shadow-sm group"
+        >
+          <Brain size={16} className="text-purple-400 group-hover:scale-110 transition-transform" />
+          <span className="hidden sm:inline font-semibold">AI Trainer</span>
+        </button>
 
         {/* Dedicated Top-Right Corner Profile Section */}
         {profile ? (

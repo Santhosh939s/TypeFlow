@@ -1,18 +1,16 @@
 import React from 'react';
-import { Clock, AlignLeft, Code, Quote as QuoteIcon, BookOpen, Hash, AtSign, Calendar, CheckCircle2, Brain } from 'lucide-react';
+import { Clock, AlignLeft, Code, Quote as QuoteIcon, BookOpen, Hash, AtSign, Calendar, CheckCircle2 } from 'lucide-react';
 import { TimeDuration, WordCountOption, CodeLanguage, LearnCategory, TestSettings } from '../types';
 import { hasDoneToday, getTodayKey } from '../utils/dailyChallenge';
 
 interface ModeSelectorProps {
   settings: TestSettings;
   onUpdateSettings: (updates: Partial<TestSettings>) => void;
-  onOpenAiTrainer?: () => void;
 }
 
 export const ModeSelector: React.FC<ModeSelectorProps> = ({
   settings,
   onUpdateSettings,
-  onOpenAiTrainer,
 }) => {
   const timeDurations: TimeDuration[] = [15, 30, 60, 120];
   const wordCounts: WordCountOption[] = [10, 25, 50, 100];
@@ -127,18 +125,6 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
               <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-[var(--color-bg)]" />
             )}
           </button>
-
-          {/* AI Trainer Quick Launch */}
-          {onOpenAiTrainer && (
-            <button
-              onClick={onOpenAiTrainer}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all text-purple-300 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 hover:border-purple-500/50 shadow-sm"
-              title="Open AI Weakness Trainer & Custom Drills"
-            >
-              <Brain size={14} className="text-purple-400" />
-              <span className="font-semibold">AI Trainer</span>
-            </button>
-          )}
         </div>
 
         {/* Divider */}

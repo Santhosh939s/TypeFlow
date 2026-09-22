@@ -36,14 +36,14 @@ export const AiTrainerModal: React.FC<AiTrainerModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
-                  AI Weakness Trainer
+                  AI Trainer &amp; Practice Lessons
                 </h2>
                 <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 flex items-center gap-1">
-                  <Sparkles size={10} /> Smart Coach
+                  <Sparkles size={10} /> Non-Repeating Drills
                 </span>
               </div>
               <p className="text-xs text-theme-sub mt-0.5">
-                Analyzes your typing history to identify error-prone character combinations and generate custom drills.
+                Practice 36 non-repeating skill lessons across 6 tracks or generate adaptive drills targeting your personal weak patterns.
               </p>
             </div>
           </div>
